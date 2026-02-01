@@ -2,10 +2,29 @@
 include "conn.php";
 require "Navbar.php";
 
-$selectedPerson = isset($_GET['id']) ? intval($_GET['id']) : null;
-$searchResults = null;
+/* =========================================================
+   SUPPORT BOTH ?id= AND ?family=
+========================================================= */
+
+$selectedPerson = null;
+
+if(isset($_GET['id']) && is_numeric($_GET['id'])){
+    $selectedPerson = intval($_GET['id']);
+}
+
+if(isset($_GET['family']) && is_numeric($_GET['family'])){
+    $fid = intval($_GET['family']);
+    $res = $conn->query("SELECT Person_Id FROM PERSON WHERE Family_Id=$fid ORDER BY Person_Id ASC LIMIT 1");
+    if($res && $res->num_rows){
+        $row = $res->fetch_assoc();
+        $selectedPerson = $row['Person_Id'];
+    }
+}
 
 /* ================= SEARCH ================= */
+
+$searchResults = null;
+
 if(isset($_GET['q']) && trim($_GET['q']) !== ''){
     $q = "%".$_GET['q']."%";
     $stmt = $conn->prepare("
@@ -18,7 +37,12 @@ if(isset($_GET['q']) && trim($_GET['q']) !== ''){
     $searchResults = $stmt->get_result();
 }
 
-/* ================= BUILD DATASET (UNCHANGED LOGIC) ================= */
+/* ================= LOAD FAMILIES ================= */
+
+$familyList = $conn->query("SELECT Family_Id, Family_Name FROM FAMILY ORDER BY Family_Name ASC");
+
+/* ================= BUILD DATASET (UNCHANGED) ================= */
+
 $nodes=[]; 
 $edges=[]; 
 $details=[];
@@ -86,7 +110,6 @@ if($selectedPerson){
 
         $idList = implode(',',array_keys($finalIds));
 
-        /* ===== ONLY CHANGE: EXTENDED JOIN FOR EXTRA DETAILS ===== */
         $res = $conn->query("
             SELECT p.*, 
                    g.Gotra_Name, 
@@ -126,129 +149,227 @@ if($selectedPerson){
 ?>
 
 <style>
-.page-content {
-    padding: 40px 20px;
+
+    /* ===========================================
+   🌿 VAMSHA VRUKSHA - FAMILY TREE GRAPH (PRO)
+=========================================== */
+
+:root {
+    --primary-blue: #2563eb;
+    --primary-green: #16a34a;
+    --light-blue: #e0f2fe;
+    --light-green: #ecfdf5;
+    --soft-bg: #f8fafc;
+    --border: #e2e8f0;
+    --text-dark: #1e293b;
 }
 
-.search-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 30px;
+*{
+    box-sizing:border-box;
 }
 
-.search-box {
-    width: 100%;
-    max-width: 600px;
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui;
+    background: linear-gradient(135deg, var(--light-blue), #f0f9ff, var(--light-green));
+    color: var(--text-dark);
+    min-height:100vh;
+}
+
+/* ===== Page Wrapper ===== */
+.page-wrapper {
+    max-width: 1200px;
+    margin: auto;
+    padding: 120px 20px 60px;
+}
+
+/* ===== Glass Card ===== */
+.glass-card {
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(18px);
+    border-radius: 24px;
+    padding: clamp(25px,4vw,50px);
+    margin-bottom: 40px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, .08);
+    transition:.3s;
+}
+
+.glass-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 30px 80px rgba(0,0,0,.12);
+}
+
+/* ===== Headings ===== */
+h2 {
     text-align: center;
+    margin-bottom: 30px;
+    font-size: clamp(20px,4vw,28px);
+    background: linear-gradient(90deg, var(--primary-blue), var(--primary-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ===== Search Box ===== */
+.search-box {
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
 }
 
 .search-box input {
-    width: 70%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    flex:1;
+    min-width:220px;
+    max-width:500px;
+    padding:14px;
+    border-radius:16px;
+    border:1px solid var(--border);
+    background:var(--soft-bg);
+    transition:.3s;
+}
+
+.search-box input:focus{
+    border-color:var(--primary-blue);
+    box-shadow:0 0 0 3px rgba(37,99,235,.15);
+    outline:none;
+    background:white;
 }
 
 .search-box button {
-    padding: 10px 15px;
-    background: #1e90ff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    padding:14px 24px;
+    border:none;
+    border-radius:16px;
+    background:linear-gradient(135deg,var(--primary-blue),var(--primary-green));
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+    transition:.3s;
 }
 
-.results a {
-    display: block;
-    margin: 6px 0;
-    color: #1e90ff;
-    text-decoration: none;
-    font-weight: 600;
+.search-box button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 25px rgba(37,99,235,.3);
 }
 
-.family-list {
-    max-width: 800px;
-    margin: 30px auto;
+/* ===== Result + Family Links ===== */
+.result-link,
+.family-link {
+    display:block;
+    padding:16px;
+    border-radius:18px;
+    background:white;
+    margin-bottom:14px;
+    text-decoration:none;
+    color:var(--text-dark);
+    font-weight:600;
+    transition:.3s;
 }
 
-.family-list a {
-    text-decoration: none;
-    color: #1e90ff;
-    font-weight: 600;
+.result-link:hover,
+.family-link:hover {
+    transform:translateY(-3px);
+    box-shadow:0 12px 28px rgba(37,99,235,.25);
 }
 
+/* ===== Graph Container ===== */
 #cy {
-    height: calc(100vh - 120px);
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100vh;
+    background:linear-gradient(135deg,#eff6ff,#f0fdf4);
 }
 
-/* Tooltip */
-.tooltip-box {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 12px;
-    border-radius: 10px;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
-    font-size: 12px;
-    display: none;
-    z-index: 9999;
-    max-width: 280px;
-    line-height: 1.6;
+/* ===== Tooltip ===== */
+.tooltip-box{
+    position:absolute;
+    padding:14px 18px;
+    background:white;
+    border-radius:16px;
+    box-shadow:0 15px 40px rgba(0,0,0,.15);
+    font-size:13px;
+    display:none;
+    z-index:1000;
+    max-width:280px;
 }
+
+/* ===== Responsive ===== */
+@media(max-width:768px){
+
+    .glass-card{
+        padding:22px;
+        border-radius:20px;
+    }
+
+    .glass-card:hover{
+        transform:none;
+    }
+}
+
+@media(max-width:480px){
+
+    .page-wrapper{
+        padding:100px 15px 40px;
+    }
+
+    h2{
+        font-size:18px;
+    }
+
+    .search-box{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+    .search-box button{
+        width:100%;
+    }
+}
+
 </style>
 
-<div class="page-content">
+<?php if(!$selectedPerson): ?>
 
-    <?php if(!$selectedPerson): ?>
+<div class="page-wrapper">
 
-    <div class="search-wrapper">
-        <div class="search-box">
-            <form>
-                <h2>Search person name for family tree</h2><br>
-                <input name="q" placeholder="Search person...">
-                <button>Search</button>
-            </form>
+    <div class="glass-card">
+        <h2>Search Person and get family Tree
+            
+        </h2>
+        <form class="search-box">
+            <input name="q" placeholder="Search person..." required>
+            <button>Search</button>
+        </form>
 
-            <div class="results">
-                <?php if($searchResults instanceof mysqli_result): ?>
-                <?php while($p=$searchResults->fetch_assoc()): ?>
-                <a href="?id=<?= $p['Person_Id'] ?>">
-                    <?= $p['First_Name'].' '.$p['Last_Name'] ?>
-                </a>
-                <?php endwhile; ?>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php if($searchResults): ?>
+        <?php while($p=$searchResults->fetch_assoc()): ?>
+        <a href="?id=<?= $p['Person_Id'] ?>" class="result-link">
+            <?= htmlspecialchars($p['First_Name']." ".$p['Last_Name']) ?>
+        </a>
+        <?php endwhile; ?>
+        <?php endif; ?>
     </div>
 
-    <div class="family-list">
-        <h3>All Families</h3>
-        <ol>
-            <?php
-$families = $conn->query("SELECT Family_Id, Family_Name FROM FAMILY ORDER BY Family_Name ASC");
-while($f = $families->fetch_assoc()){
-$personRes = $conn->query("SELECT Person_Id FROM PERSON WHERE Family_Id=".$f['Family_Id']." LIMIT 1");
-$personRow = $personRes ? $personRes->fetch_assoc() : null;
-$personId = $personRow['Person_Id'] ?? null;
+    <div class="glass-card">
+        <h2>All Families</h2>
 
-if($personId){
-echo '<li><a href="?id='.$personId.'">'.$f['Family_Name'].' (ID: '.$f['Family_Id'].')</a></li>';
-}
-}
-?>
-        </ol>
+        <?php while($fam=$familyList->fetch_assoc()): ?>
+        <a class="family-link" href="?family=<?= $fam['Family_Id'] ?>">
+            <?= htmlspecialchars($fam['Family_Name']) ?>
+            (ID: <?= $fam['Family_Id'] ?>)
+        </a>
+        <?php endwhile; ?>
+
     </div>
-
-    <?php endif; ?>
-
-    <?php if($selectedPerson): ?>
-    <div id="tooltip" class="tooltip-box"></div>
-    <div id="cy"></div>
-    <?php endif; ?>
 
 </div>
 
-<?php if($selectedPerson): ?>
+<?php else: ?>
+
+<div id="tooltip" class="tooltip-box"></div>
+<div id="cy" style="position:fixed;top:0;left:0;width:100%;height:100vh;"></div>
+
 <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 <script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
 <script src="https://unpkg.com/cytoscape-dagre/cytoscape-dagre.js"></script>
@@ -286,70 +407,32 @@ const cy = cytoscape({
     style: [{
             selector: 'node',
             style: {
-                'background-color': ele => ele.data('gender') == 'Male' ? '#1e90ff' : '#ff69b4',
+                'background-color': ele => ele.data('gender') == 'Male' ? '#2563eb' : '#ec4899',
                 'label': 'data(label)',
-                'width': 90,
-                'height': 90,
-                'text-valign': 'center',
-                'text-halign': 'center',
+                'width': 150,
+                'height': 160,
                 'color': '#fff',
-                'font-size': '10px'
+                'text-valign': 'center',
+                'text-halign': 'center'
             }
         },
         {
             selector: 'edge',
             style: {
-                'line-color': '#999',
+                'line-color': '#94a3b8',
                 'target-arrow-shape': 'triangle',
-                'curve-style': 'bezier',
-                'label': 'data(label)',
-                'font-size': '8px'
+                'label': 'data(label)'
             }
         }
     ],
     layout: {
         name: 'dagre',
         rankDir: 'TB',
-        nodeSep: 80,
-        edgeSep: 40,
-        rankSep: 120,
+        nodeSep: 90,
+        rankSep: 140,
         animate: true
     }
 });
-
-/* ===== HOVER TOOLTIP (ONLY NEW FEATURE) ===== */
-
-const tooltip = document.getElementById('tooltip');
-
-cy.on('mouseover', 'node', function(evt) {
-    const id = evt.target.id();
-    const p = details[id];
-
-    if (p) {
-        tooltip.innerHTML = `
-<b>Name:</b> ${p.First_Name} ${p.Last_Name}<br>
-<b>Gender:</b> ${p.Gender ?? '-'}<br>
-<b>Native:</b> ${p.Original_Native ?? '-'}<br><br>
-
-<b>Gothra:</b> ${p.Gotra_Name ?? '-'}<br>
-<b>Sutra:</b> ${p.Sutra_Name ?? '-'}<br>
-<b>Vamsha:</b> ${p.Vamsha_Name ?? '-'}<br>
-<b>Kula Devatha:</b> ${p.Kula_Devatha_Name ?? '-'}<br>
-<b>Mane Devru:</b> ${p.Mane_Devru_Name ?? '-'}<br>
-<b>Panchang Sudhi:</b> ${p.Panchang_Sudhi_Name ?? '-'}<br>
-<b>Pooja Vruksha:</b> ${p.Pooja_Vruksha_Name ?? '-'}
-`;
-        tooltip.style.display = 'block';
-    }
-});
-
-cy.on('mousemove', function(e) {
-    tooltip.style.left = e.originalEvent.pageX + 15 + 'px';
-    tooltip.style.top = e.originalEvent.pageY + 15 + 'px';
-});
-
-cy.on('mouseout', 'node', function() {
-    tooltip.style.display = 'none';
-});
 </script>
+
 <?php endif; ?>
