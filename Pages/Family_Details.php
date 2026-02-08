@@ -266,6 +266,24 @@ WHERE p.Person_Id=$rootPerson
 
 
 $spouse=getSpouse($head['Person_Id'],$conn);
+
+$spouseFather='-';
+$spouseMother='-';
+$spouseNative='-';
+$spouseGothra='-';
+
+if($spouse){
+    list($spouseFather,$spouseMother)=getParents($spouse['Person_Id'],$conn);
+    $spouseNative=$spouse['Original_Native'] ?? '-';
+
+    $g=$conn->query("SELECT g.Gotra_Name FROM Gothra g 
+                     JOIN PERSON p ON p.Gotra_Id=g.Gotra_Id 
+                     WHERE p.Person_Id=".$spouse['Person_Id']);
+    if($g && $g->num_rows){
+        $spouseGothra=$g->fetch_assoc()['Gotra_Name'];
+    }
+}
+
 ?>
 
     <div class="glass-card">
@@ -350,12 +368,21 @@ $spouse=getSpouse($head['Person_Id'],$conn);
 
                 <tr>
                     <td><b><?= htmlspecialchars($head['First_Name'].' '.$head['Last_Name']) ?></b></td>
-                    <td><?= $spouse ? htmlspecialchars($spouse['First_Name']) : '-' ?></td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
+
+                    <td>
+                        <?php if($spouse): ?>
+                        <a href="?person=<?= $spouse['Person_Id'] ?>" class="spouse-link">
+                            <?= htmlspecialchars($spouse['First_Name']) ?>
+                        </a>
+                        <?php else: ?>-<?php endif; ?>
+                    </td>
+
+                    <td><?= $spouseNative ?></td>
+                    <td><?= $spouseGothra ?></td>
+                    <td><?= $spouseFather ?></td>
+                    <td><?= $spouseMother ?></td>
                 </tr>
+
 
                 <?php
 $i=1;
@@ -365,7 +392,10 @@ displayGeneration($head['Person_Id'],$conn,1,$i);
             </table>
             <br>
 
-        </div> <!-- End familyContent -->
+        </div>
+
+
+        <!-- End familyContent -->
         <div class="export-wrapper">
             <button onclick="printFamily()" class="export-btn">
                 Download PDF
@@ -388,7 +418,9 @@ displayGeneration($head['Person_Id'],$conn,1,$i);
 <script>
 async function printFamily() {
 
-    const { jsPDF } = window.jspdf;
+    const {
+        jsPDF
+    } = window.jspdf;
     const content = document.getElementById("familyContent");
 
     const pdf = new jsPDF({
