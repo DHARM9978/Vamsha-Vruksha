@@ -13,6 +13,12 @@
     box-sizing:border-box;
 }
 
+html, body{
+    overflow-x: hidden;
+    height: 100%;
+}
+
+
 body{
     margin:0;
     font-family:"Segoe UI",system-ui;
@@ -33,6 +39,7 @@ body{
     border-radius:24px;
     box-shadow:0 25px 70px rgba(0,0,0,.08);
     animation:fadeUp .6s ease;
+     padding-bottom:40px;
 }
 
 /* Navbar safety */

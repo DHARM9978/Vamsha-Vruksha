@@ -1,104 +1,88 @@
+:root{
+    --primary-blue:#2563eb;
+    --primary-green:#16a34a;
+    --light-blue:#e0f2fe;
+    --light-green:#ecfdf5;
+    --soft-bg:#f8fafc;
+    --border:#e2e8f0;
+    --text-dark:#1e293b;
+}
 
+/* ===== Base ===== */
 *{
     box-sizing:border-box;
 }
+html, body{
+    overflow-x: hidden;
+}
+
 
 body{
     margin:0;
     font-family:"Segoe UI",system-ui;
-    background:linear-gradient(135deg,#e0f2fe,#f0f9ff,#ecfdf5);
-    color:#1e293b;
+    background:linear-gradient(135deg,var(--light-blue),#f0f9ff,var(--light-green));
+    color:var(--text-dark);
     min-height:100vh;
-    /* padding:20px; */
 }
 
-/* ===== Main Container ===== */
+/* ===== Container (Centered like Gothra page) ===== */
 .container{
     width:100%;
-    max-width:950px;
+    max-width:650px;
     margin:120px auto 60px;
-    background:rgba(255,255,255,.95);
+    background:rgba(255,255,255,.92);
     backdrop-filter:blur(18px);
-    padding:clamp(25px,4vw,45px);
-    border-radius:24px;
-    box-shadow:0 25px 70px rgba(0,0,0,.08);
+    padding:40px;
+    border-radius:30px;
+    box-shadow:0 25px 60px rgba(0,0,0,.08);
     animation:fadeUp .6s ease;
 }
 
-/* Navbar spacing safety */
-@media(max-width:768px){
-    .container{
-        margin-top:100px;
-    }
-}
-
-@keyframes fadeUp{
-    from{opacity:0;transform:translateY(15px);}
-    to{opacity:1;transform:translateY(0);}
-}
-
+/* ===== Heading ===== */
 h2{
     text-align:center;
     margin-bottom:30px;
-    font-size:clamp(20px,4vw,26px);
-    background:linear-gradient(90deg,#2563eb,#16a34a);
+    font-size:28px;
+    background:linear-gradient(90deg,var(--primary-blue),var(--primary-green));
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
 }
 
-/* ===== Sections ===== */
-.section{
-    margin-bottom:30px;
-    padding:20px;
-    background:linear-gradient(90deg,#f0f9ff,#f0fdf4);
-    border-radius:20px;
-    border:1px solid #e2e8f0;
-}
-
-/* ===== Responsive Row Layout ===== */
-.row{
+/* ===== FORM ROW (INLINE INPUT + BUTTON) ===== */
+.form-group{
     display:flex;
     gap:15px;
-    flex-wrap:wrap;
     align-items:center;
+    margin-bottom:30px;
 }
 
-/* Make elements responsive */
-.row > *{
-    flex:1 1 180px;
-}
-
-/* ===== Inputs & Select ===== */
-input, select{
-    padding:14px;
-    border-radius:14px;
-    border:1px solid #e2e8f0;
-    background:#f8fafc;
-    font-size:14px;
-    width:100%;
+input{
+    flex:1;
+    padding:16px;
+    border-radius:18px;
+    border:1px solid var(--border);
+    background:var(--soft-bg);
+    font-size:15px;
     transition:.3s;
-    min-width:0;
 }
 
-input:focus, select:focus{
-    border-color:#2563eb;
+input:focus{
+    border-color:var(--primary-blue);
     box-shadow:0 0 0 3px rgba(37,99,235,.15);
     outline:none;
     background:white;
 }
 
-/* ===== Button ===== */
 button{
-    padding:14px 20px;
+    padding:14px 28px;
     border:none;
-    border-radius:16px;
+    border-radius:18px;
     font-weight:600;
-    font-size:14px;
-    background:linear-gradient(135deg,#2563eb,#16a34a);
+    font-size:15px;
+    background:linear-gradient(135deg,var(--primary-blue),var(--primary-green));
     color:white;
     cursor:pointer;
     transition:.3s;
-    white-space:nowrap;
 }
 
 button:hover{
@@ -106,19 +90,42 @@ button:hover{
     box-shadow:0 12px 25px rgba(37,99,235,.3);
 }
 
-/* ===== Mobile Optimization ===== */
+/* ===== List ===== */
+.list{
+    margin-top:10px;
+}
+
+.item{
+    background:linear-gradient(90deg,var(--light-blue),var(--light-green));
+    padding:16px 20px;
+    border-radius:22px;
+    margin-bottom:18px;
+    border:1px solid var(--border);
+    transition:.3s;
+    font-size:16px;
+}
+
+.item:hover{
+    transform:translateX(6px);
+    box-shadow:0 8px 20px rgba(37,99,235,.15);
+}
+
+/* ===== Success Message ===== */
+.msg{
+    text-align:center;
+    margin-bottom:20px;
+    padding:12px;
+    border-radius:16px;
+    background:linear-gradient(90deg,#dcfce7,#f0fdf4);
+    border:1px solid #22c55e;
+    color:#166534;
+    font-weight:600;
+}
+
+/* ===== Mobile ===== */
 @media(max-width:600px){
 
-    body{
-        padding:15px;
-    }
-
-    .container{
-        padding:22px;
-        border-radius:20px;
-    }
-
-    .row{
+    .form-group{
         flex-direction:column;
         align-items:stretch;
     }

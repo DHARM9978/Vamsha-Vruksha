@@ -19,9 +19,7 @@ $data = $conn->query("SELECT * FROM Sutra ORDER BY Sutra_Name");
 <head>
 <title>Sutra Master</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <link rel="stylesheet" href="../CSS/sutra.css">
-
 </head>
 
 <body>
@@ -34,17 +32,27 @@ $data = $conn->query("SELECT * FROM Sutra ORDER BY Sutra_Name");
 <div class="msg"><?= $msg ?></div>
 <?php endif; ?>
 
+<!-- ===== Add Sutra Section ===== -->
+<div class="section">
 <form method="post">
-<div class="form-group">
-    <input name="name" placeholder="Enter Sutra Name" required>
-    <button name="save">Save</button>
-</div>
+    <div class="form-group">
+        <input name="name" placeholder="Enter Sutra Name" required>
+        <button type="submit" name="save">Save</button>
+    </div>
 </form>
+</div>
 
-<div class="list">
-<?php while($r = $data->fetch_assoc()): ?>
-<div class="item"><?= htmlspecialchars($r['Sutra_Name']) ?></div>
-<?php endwhile; ?>
+<!-- ===== List Section ===== -->
+<div class="section">
+    <h3 style="margin-bottom:15px;">Existing Sutras</h3>
+
+    <div class="list">
+    <?php while($r = $data->fetch_assoc()): ?>
+        <div class="item">
+            <?= htmlspecialchars($r['Sutra_Name']) ?>
+        </div>
+    <?php endwhile; ?>
+    </div>
 </div>
 
 </div>
