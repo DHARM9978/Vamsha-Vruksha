@@ -35,17 +35,32 @@ if(isset($_POST['save'])){
 
     $stmt=$conn->prepare("
         INSERT INTO PERSON
-        (Family_Id,First_Name,Last_Name,Gender,DOB,Phone_Number,Mobile_Number,Email,
-         Original_Native,Current_Address,Gotra_Id,Panchang_Sudhi_Id,Vamsha_Id,
+        (Family_Id,First_Name,Last_Name,father_name,mother_name,Gender,DOB,Phone_Number,Mobile_Number,Email,
+         Original_Native,Current_Address,Gotra_Id,Sutra_Id,Panchang_Sudhi_Id,Vamsha_Id,
          Mane_Devru_Id,Kula_Devatha_Id,Pooja_Vruksha_Id)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    ");
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ");
 
-    $stmt->bind_param("issssssssiiiiiii",
-        $_POST['family_id'],$_POST['first'],$_POST['last'],$_POST['gender'],$_POST['dob'],
-        $_POST['phone'],$_POST['mobile'],$_POST['email'],$_POST['native'],$_POST['address'],
-        $_POST['gotra'],$_POST['panchang'],$_POST['vamsha'],
-        $_POST['mane_devru'],$_POST['kula_devatha'],$_POST['pooja_vruksha']
+    $stmt->bind_param("issssssssssiiiiiiii",
+            $_POST['family_id'],    //i
+            $_POST['first'],        //s
+            $_POST['last'],         //s
+            $_POST['father_name'],  //s
+            $_POST['mother_name'],  //s
+            $_POST['gender'],       //s
+            $_POST['dob'],          //s
+            $_POST['phone'],        //s
+            $_POST['mobile'],       //s
+            $_POST['email'],        //s
+            $_POST['native'],       //s
+            $_POST['address'],      //s
+            $_POST['gotra'],        //i
+            $_POST['sutra'],        //i
+            $_POST['panchang'],     //i
+            $_POST['vamsha'],       //i
+            $_POST['mane_devru'],   //i
+            $_POST['kula_devatha'], //i
+            $_POST['pooja_vruksha'] //i
     );
     $stmt->execute();
 
@@ -97,8 +112,8 @@ function loadOptions($conn,$t,$id,$name){
 
 <head>
     <title>Add Person</title>
-<link rel="stylesheet" href="../CSS/person_css.css">
-   
+    <link rel="stylesheet" href="../CSS/person_css.css">
+
 </head>
 
 <body>
@@ -117,6 +132,9 @@ function loadOptions($conn,$t,$id,$name){
             <input name="first" placeholder="First Name" required>
             <input name="last" placeholder="Last Name">
 
+            <input name="father_name" placeholder="Father Name">
+            <input name="mother_name" placeholder="Mother Name">
+
             <select name="gender" id="gender">
                 <option>Male</option>
                 <option>Female</option>
@@ -129,16 +147,35 @@ function loadOptions($conn,$t,$id,$name){
             <input name="native" placeholder="Native">
             <input name="address" placeholder="Address" class="full">
 
-            <select name="gotra"><?php loadOptions($conn,"Gothra","Gotra_Id","Gotra_Name"); ?></select>
-            <select
-                name="panchang"><?php loadOptions($conn,"Panchang_Sudhi","Panchang_Sudhi_Id","Panchang_Sudhi_Name"); ?></select>
-            <select name="vamsha"><?php loadOptions($conn,"Vamsha","Vamsha_Id","Vamsha_Name"); ?></select>
-            <select
-                name="mane_devru"><?php loadOptions($conn,"Mane_Devru","Mane_Devru_Id","Mane_Devru_Name"); ?></select>
-            <select
-                name="kula_devatha"><?php loadOptions($conn,"Kula_Devatha","Kula_Devatha_Id","Kula_Devatha_Name"); ?></select>
-            <select name="pooja_vruksha"
-                class="full"><?php loadOptions($conn,"Pooja_Vruksha","Pooja_Vruksha_Id","Pooja_Vruksha_Name"); ?></select>
+            <select name="gotra">
+                <option value="" disabled selected>Select Gotra</option>
+                <?php loadOptions($conn,"Gothra","Gotra_Id","Gotra_Name"); ?>
+            </select>
+
+            <select name="sutra">
+                <option value="" disabled selected>Select Sutra</option>
+                <?php loadOptions($conn,"Sutra","Sutra_Id","Sutra_Name"); ?>
+            </select>
+            <select name="panchang">
+                <option value="" disabled selected>Select Panchang</option>
+                <?php loadOptions($conn,"Panchang_Sudhi","Panchang_Sudhi_Id","Panchang_Sudhi_Name"); ?>
+            </select>
+            <select name="vamsha">
+                <option value="" disabled selected>Select Vamsha</option>
+                <?php loadOptions($conn,"Vamsha","Vamsha_Id","Vamsha_Name"); ?>
+            </select>
+            <select name="mane_devru">
+                <option value="" disabled selected>Select Mane_Devaru</option>
+                <?php loadOptions($conn,"Mane_Devru","Mane_Devru_Id","Mane_Devru_Name"); ?>
+            </select>
+            <select name="kula_devatha">
+                <option value="" disabled selected>Select Kula_Devatha</option>
+                <?php loadOptions($conn,"Kula_Devatha","Kula_Devatha_Id","Kula_Devatha_Name"); ?>
+            </select>
+            <select name="pooja_vruksha" class="full">
+                <option value="" disabled selected>Select Pooja_Vruksha</option>
+                <?php loadOptions($conn,"Pooja_Vruksha","Pooja_Vruksha_Id","Pooja_Vruksha_Name"); ?>
+            </select>
 
             <select name="relation_type" class="full" required>
                 <option value="">Relation with selected member</option>
