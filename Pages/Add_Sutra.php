@@ -44,7 +44,6 @@ $data = $conn->query("SELECT * FROM Sutra ORDER BY Sutra_Name");
 
 <!-- ===== List Section ===== -->
 <div class="section">
-    <h3 style="margin-bottom:15px;">Existing Sutras</h3>
 
     <div class="list">
     <?php while($r = $data->fetch_assoc()): ?>

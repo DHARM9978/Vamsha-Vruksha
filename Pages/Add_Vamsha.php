@@ -27,43 +27,41 @@ $result = $conn->query("SELECT * FROM Vamsha ORDER BY Vamsha_Name ASC");
 ?>
 <!DOCTYPE html>
 <html>
-<head>
-<title>Vamsha Master</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet" href="../CSS/vamsha.css">
+<head>
+    <title>Vamsha Master</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="../CSS/vamsha.css">
 
 </head>
 
 <body>
 
-<div class="container">
+    <div class="container">
 
-<h2>Vamsha Master</h2>
+        <h2>Vamsha Master</h2>
 
-<?php if($message): ?>
-<div class="msg"><?= $message ?></div>
-<?php endif; ?>
+        <?php if($message): ?>
+        <div class="msg"><?= $message ?></div>
+        <?php endif; ?>
 
-<form method="post">
-<input type="text" name="vamsha_name" placeholder="Enter Vamsha Name" required>
-<button type="submit" name="save">Save Vamsha</button>
-</form>
+        <form method="post">
+            <input type="text" name="vamsha_name" placeholder="Enter Vamsha Name" required>
+            <button type="submit" name="save">Save Vamsha</button>
+        </form>
 
-<table>
-<tr>
-    <th>#</th>
-    <th>Vamsha Name</th>
-</tr>
-<?php $i=1; while($row = $result->fetch_assoc()): ?>
-<tr>
-    <td><?= $i++ ?></td>
-    <td><?= htmlspecialchars($row['Vamsha_Name']) ?></td>
-</tr>
-<?php endwhile; ?>
-</table>
+        <div class="list">
+            <?php while($row = $result->fetch_assoc()): ?>
+            <div class="item">
+                <?= htmlspecialchars($row['Vamsha_Name']) ?>
+            </div>
+            <?php endwhile; ?>
+        </div>
 
-</div>
+
+    </div>
 
 </body>
+
 </html>
