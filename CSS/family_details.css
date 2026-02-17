@@ -151,33 +151,39 @@ h3 {
 /* ================= TABLE ================= */
 
 .table-wrapper {
+    width: 100%;
     overflow-x: auto;
-    border-radius: 1.1em;
+    -webkit-overflow-scrolling: touch;
+       position: relative;
 }
-
 table {
     width: 100%;
-    min-width: 50em;
+    min-width: 850px; /* ensures scroll */
     border-collapse: collapse;
     background: white;
-    border-radius: 1.1em;
-    overflow: hidden;
 }
 
+/* ===== Header ===== */
 th {
     background: linear-gradient(90deg, #eff6ff, #e0f2fe);
-    padding: 0.9em;
+    padding: 0.8em;
     text-align: left;
     color: var(--primary-blue);
-    font-size: 0.9em;
+    white-space: nowrap;
+    font-size: 0.95em;
+    position: relative;
+    z-index: 2;
 }
 
+/* ===== Cells ===== */
 td {
-    padding: 0.8em;
-    border-bottom: 0.06em solid #f1f5f9;
+    padding: 0.7em;
+    border-bottom: 1px solid #f1f5f9;
+    white-space: nowrap;
     font-size: 0.9em;
 }
 
+/* Hover */
 tr:hover td {
     background: #f8fafc;
 }
@@ -186,6 +192,12 @@ tr:hover td {
 td:first-child {
     font-weight: 500;
 }
+
+
+
+
+
+
 
 /* ================= SPOUSE LINK ================= */
 

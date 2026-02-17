@@ -226,7 +226,7 @@ $familyList=$conn->query("SELECT Family_Id,Family_Name FROM FAMILY ORDER BY Fami
 
 <div class="page-wrapper">
 
-<?php if(!$rootPerson): ?>
+    <?php if(!$rootPerson): ?>
 
     <!-- SEARCH SECTION -->
 
@@ -257,9 +257,9 @@ $familyList=$conn->query("SELECT Family_Id,Family_Name FROM FAMILY ORDER BY Fami
         <?php endwhile; ?>
     </div>
 
-<?php else: ?>
+    <?php else: ?>
 
-<?php
+    <?php
 $stmt = $conn->prepare("
 SELECT p.*, 
        g.Gotra_Name, 
@@ -287,106 +287,107 @@ $head=$stmt->get_result()->fetch_assoc();
 $spouse=getSpouse($head['Person_Id'],$conn);
 ?>
 
-<div class="glass-card">
+    <div class="glass-card">
 
-<br><br>
+        <br><br>
 
-<div id="familyContent">
+        <div id="familyContent">
 
-<h2><?= htmlspecialchars($head['First_Name']." ".$head['Last_Name']) ?> Family Branch</h2>
+            <h2><?= htmlspecialchars($head['First_Name']." ".$head['Last_Name']) ?> Family Branch</h2>
 
 
-<!-- HEAD HORIZONTAL SECTION -->
+            <!-- HEAD HORIZONTAL SECTION -->
 
-<div class="head-horizontal">
+            <div class="head-horizontal">
 
-    <div>
-        <span>Head</span>
-        <?= htmlspecialchars($head['First_Name']." ".$head['Last_Name']) ?>
-    </div>
+                <div>
+                    <span>Head</span>
+                    <?= htmlspecialchars($head['First_Name']." ".$head['Last_Name']) ?>
+                </div>
 
-    <div>
-        <span>Spouse</span>
-        <?= $spouse ? htmlspecialchars($spouse['First_Name']) : '-' ?>
-    </div>
+                <div>
+                    <span>Spouse</span>
+                    <?= $spouse ? htmlspecialchars($spouse['First_Name']) : '-' ?>
+                </div>
 
-    <div>
-        <span>Native</span>
-        <?= $head['Original_Native'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Native</span>
+                    <?= $head['Original_Native'] ?? '-' ?>
+                </div>
 
-    <div>
-        <span>Gothra</span>
-        <?= $head['Gotra_Name'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Gothra</span>
+                    <?= $head['Gotra_Name'] ?? '-' ?>
+                </div>
 
-    <div>
-        <span>Sutra</span>
-        <?= $head['Sutra_Name'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Sutra</span>
+                    <?= $head['Sutra_Name'] ?? '-' ?>
+                </div>
 
-    <div>
-        <span>Vamsha</span>
-        <?= $head['Vamsha_Name'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Vamsha</span>
+                    <?= $head['Vamsha_Name'] ?? '-' ?>
+                </div>
 
-    <div>
-        <span>Panchang Sudhi</span>
-        <?= $head['Panchang_Sudhi_Name'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Panchang Sudhi</span>
+                    <?= $head['Panchang_Sudhi_Name'] ?? '-' ?>
+                </div>
 
-    <div>
-        <span>Kula Devatha</span>
-        <?= $head['Kula_Devatha_Name'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Kula Devatha</span>
+                    <?= $head['Kula_Devatha_Name'] ?? '-' ?>
+                </div>
 
-    <div>
-        <span>Mane Devru</span>
-        <?= $head['Mane_Devru_Name'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Mane Devru</span>
+                    <?= $head['Mane_Devru_Name'] ?? '-' ?>
+                </div>
 
-    <div>
-        <span>Pooja Vruksha</span>
-        <?= $head['Pooja_Vruksha_Name'] ?? '-' ?>
-    </div>
+                <div>
+                    <span>Pooja Vruksha</span>
+                    <?= $head['Pooja_Vruksha_Name'] ?? '-' ?>
+                </div>
 
-</div>
+            </div>
 
-<h3>Family Hierarchy</h3>
+            <h3>Family Hierarchy</h3>
 
-<table>
-<tr>
-    <th>Name</th>
-    <th>Spouse</th>
-    <th>Spouse Native</th>
-    <th>Spouse Gothra</th>
-    <th>Spouse Father</th>
-    <th>Spouse Mother</th>
-</tr>
+            <div class="table-wrapper">
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Spouse</th>
+                        <th>Spouse Native</th>
+                        <th>Spouse Gothra</th>
+                        <th>Spouse Father</th>
+                        <th>Spouse Mother</th>
+                    </tr>
 
-<tr>
-    <td><b><?= htmlspecialchars($head['First_Name'].' '.$head['Last_Name']) ?></b></td>
+                    <tr>
+                        <td><b><?= htmlspecialchars($head['First_Name'].' '.$head['Last_Name']) ?></b></td>
 
-    <!-- 🔥 UPDATED SPOUSE LOGIC -->
-    <td>
-    <?php if($spouse): ?>
-        <?php if($spouse['Family_Id'] != $head['Family_Id']): ?>
-            <a href="?person=<?= $spouse['Person_Id'] ?>" class="spouse-link">
-                <?= htmlspecialchars($spouse['First_Name']) ?>
-            </a>
-        <?php else: ?>
-            <?= htmlspecialchars($spouse['First_Name']) ?>
-        <?php endif; ?>
-    <?php else: ?>-<?php endif; ?>
-    </td>
+                        <!-- 🔥 UPDATED SPOUSE LOGIC -->
+                        <td>
+                            <?php if($spouse): ?>
+                            <?php if($spouse['Family_Id'] != $head['Family_Id']): ?>
+                            <a href="?person=<?= $spouse['Person_Id'] ?>" class="spouse-link">
+                                <?= htmlspecialchars($spouse['First_Name']) ?>
+                            </a>
+                            <?php else: ?>
+                            <?= htmlspecialchars($spouse['First_Name']) ?>
+                            <?php endif; ?>
+                            <?php else: ?>-<?php endif; ?>
+                        </td>
 
-    <td><?= htmlspecialchars($spouse['Original_Native'] ?? '-') ?></td>
-    <td><?= htmlspecialchars(getGotraName($spouse['Gotra_Id'] ?? null,$conn)) ?></td>
-    <td><?= htmlspecialchars($spouse['father_name'] ?? '-') ?></td>
-    <td><?= htmlspecialchars($spouse['mother_name'] ?? '-') ?></td>
-</tr>
+                        <td><?= htmlspecialchars($spouse['Original_Native'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars(getGotraName($spouse['Gotra_Id'] ?? null,$conn)) ?></td>
+                        <td><?= htmlspecialchars($spouse['father_name'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($spouse['mother_name'] ?? '-') ?></td>
+                    </tr>
 
-<?php
+                    <?php
 
 // 🔥 Head's Children
 $i = 1;
@@ -444,23 +445,24 @@ if(!empty($siblings)){
 ?>
 
 
-</table>
+                </table>
+            </div>
 
-<br>
+            <br>
 
-</div>
+        </div>
 
-<!-- PDF EXPORT BUTTON -->
+        <!-- PDF EXPORT BUTTON -->
 
-<div class="export-wrapper">
-    <button onclick="printFamily()" class="export-btn">
-        Download PDF
-    </button>
-</div>
+        <div class="export-wrapper">
+            <button onclick="printFamily()" class="export-btn">
+                Download PDF
+            </button>
+        </div>
 
-</div>
+    </div>
 
-<?php endif; ?>
+    <?php endif; ?>
 
 </div>
 
@@ -477,34 +479,56 @@ if(!empty($siblings)){
 <script>
 async function printFamily() {
 
-    const { jsPDF } = window.jspdf;
-    const content = document.getElementById("familyContent");
+    const {
+        jsPDF
+    } = window.jspdf;
+    const originalContent = document.getElementById("familyContent");
 
-    if (!content) {
+    if (!originalContent) {
         alert("Family content not found!");
         return;
     }
 
+    // 🔥 STEP 1: Clone content
+    const clone = originalContent.cloneNode(true);
+
+    // 🔥 STEP 2: Create hidden container
+    const hiddenContainer = document.createElement("div");
+    hiddenContainer.style.position = "fixed";
+    hiddenContainer.style.top = "-9999px";
+    hiddenContainer.style.left = "-9999px";
+    hiddenContainer.style.width = "1200px"; // force desktop width
+    hiddenContainer.appendChild(clone);
+
+    document.body.appendChild(hiddenContainer);
+
+    // Wait for rendering
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // 🔥 STEP 3: Capture canvas from clone
+    const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: 1200
+    });
+
+    // 🔥 Remove clone immediately
+    document.body.removeChild(hiddenContainer);
+
+    // 🔥 STEP 4: Create PDF
     const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
-        format: "a4",
-        compress: true
+        format: "a4"
     });
 
-    const margin = 12;
+    const margin = 10;
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
     const usableWidth = pdfWidth - margin * 2;
     const usableHeight = pdfHeight - margin * 2;
-
-    // Capture the family content as canvas
-    const canvas = await html2canvas(content, {
-        scale: 1.8,      // Balanced quality + size
-        useCORS: true,
-        backgroundColor: "#ffffff"
-    });
 
     const ratio = usableWidth / canvas.width;
     const pageHeightPx = Math.floor(usableHeight / ratio);
@@ -534,7 +558,7 @@ async function printFamily() {
             sliceHeight
         );
 
-        const imgData = pageCanvas.toDataURL("image/jpeg", 0.85);
+        const imgData = pageCanvas.toDataURL("image/jpeg", 0.9);
 
         if (pageIndex > 0) {
             pdf.addPage();
