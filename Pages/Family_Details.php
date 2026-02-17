@@ -1,9 +1,8 @@
 <?php
 include "conn.php";
 require "Navbar.php";
-
 /* =========================================================
-   ROOT PERSON DETECTION
+   ROOT PERSON DETECTION (FINAL CORRECT VERSION)
 ========================================================= */
 
 $rootPerson = null;
@@ -13,6 +12,7 @@ if (isset($_GET['person']) && is_numeric($_GET['person'])) {
 
     $selected = intval($_GET['person']);
 
+    // 🔥 First get the family of searched person
     $stmt = $conn->prepare("SELECT Family_Id FROM PERSON WHERE Person_Id=?");
     $stmt->bind_param("i", $selected);
     $stmt->execute();
@@ -21,7 +21,14 @@ if (isset($_GET['person']) && is_numeric($_GET['person'])) {
     if ($row && $row['Family_Id']) {
         $familyId = $row['Family_Id'];
 
-        $stmt = $conn->prepare("SELECT Person_Id FROM PERSON WHERE Family_Id=? ORDER BY Person_Id ASC LIMIT 1");
+        // 🔥 ALWAYS get oldest person as HEAD
+        $stmt = $conn->prepare("
+            SELECT Person_Id 
+            FROM PERSON 
+            WHERE Family_Id=? 
+            ORDER BY Person_Id ASC 
+            LIMIT 1
+        ");
         $stmt->bind_param("i", $familyId);
         $stmt->execute();
         $rootPerson = $stmt->get_result()->fetch_assoc()['Person_Id'] ?? null;
@@ -32,7 +39,13 @@ if (isset($_GET['family']) && is_numeric($_GET['family'])) {
 
     $familyId = intval($_GET['family']);
 
-    $stmt = $conn->prepare("SELECT Person_Id FROM PERSON WHERE Family_Id=? ORDER BY Person_Id ASC LIMIT 1");
+    $stmt = $conn->prepare("
+        SELECT Person_Id 
+        FROM PERSON 
+        WHERE Family_Id=? 
+        ORDER BY Person_Id ASC 
+        LIMIT 1
+    ");
     $stmt->bind_param("i", $familyId);
     $stmt->execute();
     $rootPerson = $stmt->get_result()->fetch_assoc()['Person_Id'] ?? null;
@@ -109,6 +122,29 @@ function getChildren($id,$conn){
     while($row=$r->fetch_assoc()) $list[]=$row;
     return $list;
 }
+
+function getSiblings($id,$conn){
+
+    $siblings=[];
+
+    $stmt=$conn->prepare("
+        SELECT DISTINCT p.*
+        FROM FAMILY_RELATION fr
+        JOIN PERSON p ON
+        ((fr.Person_Id=? AND fr.Relation_Type IN ('Brother','Sister') AND p.Person_Id=fr.Related_Person_Id)
+        OR
+        (fr.Related_Person_Id=? AND fr.Relation_Type IN ('Brother','Sister') AND p.Person_Id=fr.Person_Id))
+    ");
+
+    $stmt->bind_param("ii",$id,$id);
+    $stmt->execute();
+    $r=$stmt->get_result();
+
+    while($row=$r->fetch_assoc()) $siblings[]=$row;
+
+    return $siblings;
+}
+
 
 function getGotraName($id,$conn){
     if(!$id) return "-";
@@ -257,7 +293,8 @@ $spouse=getSpouse($head['Person_Id'],$conn);
 
 <div id="familyContent">
 
-<h2><?= htmlspecialchars($head['First_Name']." ".$head['Last_Name']) ?> Family</h2>
+<h2><?= htmlspecialchars($head['First_Name']." ".$head['Last_Name']) ?> Family Branch</h2>
+
 
 <!-- HEAD HORIZONTAL SECTION -->
 
@@ -350,9 +387,62 @@ $spouse=getSpouse($head['Person_Id'],$conn);
 </tr>
 
 <?php
-$i=1;
-displayGeneration($head['Person_Id'],$conn,$head['Family_Id'],1,$i);
+
+// 🔥 Head's Children
+$i = 1;
+displayGeneration(
+    $head['Person_Id'],
+    $conn,
+    $head['Family_Id'],
+    1,
+    $i
+);
+
+// 🔥 Get Head's Siblings
+$siblings = getSiblings($head['Person_Id'],$conn);
+
+if(!empty($siblings)){
+
+    foreach($siblings as $sib){
+
+        echo "<tr>";
+        echo "<td style='padding-left:0px;'><b>"
+             .htmlspecialchars($sib['First_Name']." ".$sib['Last_Name'])
+             ."</b></td>";
+
+        $spouse = getSpouse($sib['Person_Id'],$conn);
+
+        echo "<td>";
+        if($spouse){
+            if($spouse['Family_Id'] != $head['Family_Id']){
+                echo "<a href='?person=".$spouse['Person_Id']."' class='spouse-link'>"
+                     .htmlspecialchars($spouse['First_Name'])."</a>";
+            } else {
+                echo htmlspecialchars($spouse['First_Name']);
+            }
+        } else echo "-";
+        echo "</td>";
+
+        echo "<td>".htmlspecialchars($spouse['Original_Native'] ?? '-')."</td>";
+        echo "<td>".htmlspecialchars(getGotraName($spouse['Gotra_Id'] ?? null,$conn))."</td>";
+        echo "<td>".htmlspecialchars($spouse['father_name'] ?? '-')."</td>";
+        echo "<td>".htmlspecialchars($spouse['mother_name'] ?? '-')."</td>";
+        echo "</tr>";
+
+        // 🔥 Reset counter for this sibling branch
+        $siblingCounter = 1;
+
+        displayGeneration(
+            $sib['Person_Id'],
+            $conn,
+            $head['Family_Id'],
+            1,
+            $siblingCounter
+        );
+    }
+}
 ?>
+
 
 </table>
 
