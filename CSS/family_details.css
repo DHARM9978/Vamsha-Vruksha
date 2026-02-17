@@ -8,31 +8,30 @@
     --text-dark: #1e293b;
 }
 
+/* ================= GLOBAL ================= */
+
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-/* ===== Hide Scrollbar But Allow Scroll ===== */
-
-/* Chrome, Edge, Safari */
+/* Hide Scrollbar but allow scroll */
 *::-webkit-scrollbar {
     width: 0px;
     height: 0px;
 }
 
-/* Firefox */
 html {
     scrollbar-width: none;
 }
 
-/* Prevent horizontal scroll */
 html, body {
     overflow-x: hidden;
 }
 
-/* ===== Body ===== */
+/* ================= BODY ================= */
+
 body {
     font-family: "Segoe UI", system-ui;
     background: linear-gradient(
@@ -45,14 +44,16 @@ body {
     min-height: 100vh;
 }
 
-/* ===== Page Wrapper ===== */
+/* ================= PAGE WRAPPER ================= */
+
 .page-wrapper {
     max-width: 75em;
     margin: auto;
     padding: 7.5em 1.25em 3.75em;
 }
 
-/* ===== Glass Card ===== */
+/* ================= GLASS CARD ================= */
+
 .glass-card {
     background: rgba(255, 255, 255, .92);
     backdrop-filter: blur(1.125em);
@@ -68,7 +69,8 @@ body {
     box-shadow: 0 2em 5em rgba(0, 0, 0, .12);
 }
 
-/* ===== Headings ===== */
+/* ================= HEADINGS ================= */
+
 h2 {
     text-align: center;
     margin-bottom: 1.8em;
@@ -84,7 +86,8 @@ h3 {
     color: var(--primary-blue);
 }
 
-/* ===== Search ===== */
+/* ================= SEARCH ================= */
+
 .search-box {
     display: flex;
     justify-content: center;
@@ -126,7 +129,8 @@ h3 {
     box-shadow: 0 0.6em 1.5em rgba(37, 99, 235, .3);
 }
 
-/* ===== Family Links ===== */
+/* ================= FAMILY LINKS ================= */
+
 .family-link {
     display: block;
     padding: 1em;
@@ -144,7 +148,8 @@ h3 {
     box-shadow: 0 0.8em 1.8em rgba(37, 99, 235, .2);
 }
 
-/* ===== Table ===== */
+/* ================= TABLE ================= */
+
 .table-wrapper {
     overflow-x: auto;
     border-radius: 1.1em;
@@ -164,6 +169,7 @@ th {
     padding: 0.9em;
     text-align: left;
     color: var(--primary-blue);
+    font-size: 0.9em;
 }
 
 td {
@@ -176,11 +182,18 @@ tr:hover td {
     background: #f8fafc;
 }
 
-/* ===== Spouse Link ===== */
+/* Indentation Visual Enhancement */
+td:first-child {
+    font-weight: 500;
+}
+
+/* ================= SPOUSE LINK ================= */
+
 .spouse-link {
     color: var(--primary-blue);
     font-weight: 600;
     text-decoration: none;
+    transition: .2s ease;
 }
 
 .spouse-link:hover {
@@ -188,7 +201,8 @@ tr:hover td {
     text-decoration: underline;
 }
 
-/* ===== Head Info Grid ===== */
+/* ================= HEAD INFO GRID ================= */
+
 .head-horizontal {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
@@ -206,7 +220,8 @@ tr:hover td {
     margin-bottom: 0.4em;
 }
 
-/* ===== Export Button ===== */
+/* ================= EXPORT BUTTON ================= */
+
 .export-wrapper {
     display: flex;
     justify-content: center;
@@ -230,7 +245,8 @@ tr:hover td {
     box-shadow: 0 0.9em 1.8em rgba(37, 99, 235, .3);
 }
 
-/* ===== Responsive ===== */
+/* ================= RESPONSIVE ================= */
+
 @media (max-width: 48em) {
 
     .glass-card {
