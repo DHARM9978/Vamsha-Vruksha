@@ -1,113 +1,193 @@
 <?php
-include "conn.php";
-require "Navbar.php";
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-$msg = "";
+include "conn.php";
 
 /* ================= ADD ================= */
 if(isset($_POST['save'])){
+
+    $name = strtolower(trim($_POST['name']));
+
+    if($name == ""){
+        header("Location: Add_Gothara.php?error=empty");
+        exit;
+    }
+
+    $check = $conn->prepare("SELECT Gotra_Id FROM Gothra WHERE LOWER(Gotra_Name)=?");
+    $check->bind_param("s", $name);
+    $check->execute();
+    $check->store_result();
+
+    if($check->num_rows > 0){
+        header("Location: Add_Gothara.php?error=duplicate");
+        exit;
+    }
+
     $stmt = $conn->prepare("INSERT INTO Gothra (Gotra_Name) VALUES (?)");
-    $stmt->bind_param("s", $_POST['name']);
+    $stmt->bind_param("s", $name);
+
     if($stmt->execute()){
         header("Location: Add_Gothara.php?success=added");
         exit;
-    }
-}
-
-
-/* ================= UPDATE ================= */
-if(isset($_POST['update'])){
-    $stmt = $conn->prepare("UPDATE Gothra SET Gotra_Name=? WHERE Gotra_Id=?");
-    $stmt->bind_param("si", $_POST['edit_name'], $_POST['edit_id']);
-    if($stmt->execute()){
-        header("Location: Add_Gothara.php?success=updated");
+    } else {
+        header("Location: Add_Gothara.php?error=general");
         exit;
     }
 }
 
+/* ================= UPDATE ================= */
+if(isset($_POST['update'])){
 
-$data = $conn->query("SELECT * FROM Gothra ORDER BY Gotra_Name");
+    $id   = intval($_POST['edit_id']);
+    $name = strtolower(trim($_POST['edit_name']));
+
+    if($name == ""){
+        header("Location: Add_Gothara.php?error=empty");
+        exit;
+    }
+
+    $check = $conn->prepare("SELECT Gotra_Id FROM Gothra WHERE LOWER(Gotra_Name)=? AND Gotra_Id!=?");
+    $check->bind_param("si", $name, $id);
+    $check->execute();
+    $check->store_result();
+
+    if($check->num_rows > 0){
+        header("Location: Add_Gothara.php?error=duplicate");
+        exit;
+    }
+
+    $stmt = $conn->prepare("UPDATE Gothra SET Gotra_Name=? WHERE Gotra_Id=?");
+    $stmt->bind_param("si", $name, $id);
+
+    if($stmt->execute()){
+        header("Location: Add_Gothara.php?success=updated");
+        exit;
+    } else {
+        header("Location: Add_Gothara.php?error=general");
+        exit;
+    }
+}
+
+/* ================= DELETE ================= */
+if(isset($_GET['delete']) && is_numeric($_GET['delete'])){
+
+    $deleteId = intval($_GET['delete']);
+
+    $check = $conn->prepare("SELECT COUNT(*) as total FROM family WHERE Gotra_Id=?");
+    $check->bind_param("i", $deleteId);
+    $check->execute();
+    $result = $check->get_result()->fetch_assoc();
+
+    if($result['total'] > 0){
+        header("Location: Add_Gothara.php?error=inuse");
+        exit;
+    }
+
+    $stmt = $conn->prepare("DELETE FROM Gothra WHERE Gotra_Id=?");
+    $stmt->bind_param("i", $deleteId);
+
+    if($stmt->execute()){
+        header("Location: Add_Gothara.php?success=deleted");
+        exit;
+    } else {
+        header("Location: Add_Gothara.php?error=general");
+        exit;
+    }
+}
+
+$data = $conn->query("SELECT * FROM Gothra ORDER BY Gotra_Name ASC");
 ?>
 
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Gothra Master</title>
+    <title>Gothra</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <link rel="stylesheet" href="../CSS/Gothara.css">
-
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 </head>
 
 <body>
 
-    <div class="container">
+<?php require "Navbar.php"; ?>
 
-        <h2>Gothra Master</h2>
+<div class="container">
 
-     <?php
-if(isset($_GET['success']) && $_GET['success']=="updated"){
-    echo '<div class="msg">Gothra updated successfully!</div>';
-}
-if(isset($_GET['success']) && $_GET['success']=="added"){
-    echo '<div class="msg">Gothra added successfully!</div>';
-}
-?>
+    <h2>Add Gothra</h2>
 
-        <!-- ADD FORM -->
-        <form method="post">
-            <div class="form-group">
-                <input name="name" placeholder="Enter Gothra Name" required>
-                <button name="save">Save</button>
-            </div>
-        </form>
+    <?php
+    if(isset($_GET['success'])){
+        if($_GET['success']=="added")
+            echo '<div class="msg success">Gothra added successfully!</div>';
+        if($_GET['success']=="updated")
+            echo '<div class="msg success">Gothra updated successfully!</div>';
+        if($_GET['success']=="deleted")
+            echo '<div class="msg success">Gothra deleted successfully!</div>';
+    }
 
-        <!-- LIST SECTION -->
-        <div class="list">
+    if(isset($_GET['error'])){
+        if($_GET['error']=="duplicate")
+            echo '<div class="msg error">This Gothra already exists.</div>';
+        if($_GET['error']=="empty")
+            echo '<div class="msg error">Gothra name cannot be empty.</div>';
+        if($_GET['error']=="general")
+            echo '<div class="msg error">Something went wrong.</div>';
+        if($_GET['error']=="inuse")
+            echo '<div class="msg error">Cannot delete. Gothra is used in Family table.</div>';
+    }
+    ?>
 
-            <?php while($r=$data->fetch_assoc()): ?>
+    <!-- ADD FORM -->
+    <form method="post">
+        <div class="form-group">
+            <input name="name" placeholder="Enter Gothra Name" required>
+            <button name="save">Save</button>
+        </div>
+    </form>
 
+    <!-- LIST -->
+    <div class="list">
+        <?php while($r = $data->fetch_assoc()): ?>
             <div class="item">
 
                 <?php if(isset($_GET['edit']) && $_GET['edit']==$r['Gotra_Id']): ?>
 
-                <!-- EDIT MODE -->
-                <form method="post" class="edit-form">
-                    <input type="hidden" name="edit_id" value="<?= $r['Gotra_Id'] ?>">
-                    <input type="text" name="edit_name" value="<?= htmlspecialchars($r['Gotra_Name']) ?>" required>
+                    <form method="post" class="edit-form">
+                        <input type="hidden" name="edit_id" value="<?= $r['Gotra_Id'] ?>">
+                        <input type="text" name="edit_name" value="<?= htmlspecialchars($r['Gotra_Name']) ?>" required>
 
-                    <button class="icon-btn save" name="update">
-                        <i class="fas fa-check"></i>
-                    </button>
+                        <button class="icon-btn save" name="update">
+                            <i class="fas fa-check"></i>
+                        </button>
 
-                    <a href="Gothra.php" class="icon-btn cancel">
-                        <i class="fas fa-times"></i>
-                    </a>
-                </form>
+                        <a href="Add_Gothara.php" class="icon-btn cancel">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </form>
 
                 <?php else: ?>
 
-                <!-- NORMAL DISPLAY -->
-                <span><?= htmlspecialchars($r['Gotra_Name']) ?></span>
+                    <span><?= htmlspecialchars($r['Gotra_Name']) ?></span>
 
-                <a href="?edit=<?= $r['Gotra_Id'] ?>" class="icon-btn edit">
-                    <i class="fas fa-pen"></i>
-                </a>
+                    <div class="action-buttons">
+                        <a href="?edit=<?= $r['Gotra_Id'] ?>" class="icon-btn edit">
+                            <i class="fas fa-pen"></i>
+                        </a>
+
+                        <a href="?delete=<?= $r['Gotra_Id'] ?>" class="icon-btn delete"
+                           onclick="return confirm('Are you sure?');">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
 
                 <?php endif; ?>
 
             </div>
-
-            <?php endwhile; ?>
-
-        </div>
-
+        <?php endwhile; ?>
     </div>
 
-</body>
+</div>
 
+</body>
 </html>

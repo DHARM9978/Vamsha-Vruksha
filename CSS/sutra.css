@@ -12,10 +12,10 @@
 *{
     box-sizing:border-box;
 }
+
 html, body{
     overflow-x: hidden;
 }
-
 
 body{
     margin:0;
@@ -25,45 +25,57 @@ body{
     min-height:100vh;
 }
 
-/* ===== Container (Centered like Gothra page) ===== */
+/* ===== Container ===== */
 .container{
     width:100%;
     max-width:650px;
     margin:120px auto 60px;
     background:rgba(255,255,255,.92);
     backdrop-filter:blur(18px);
-    padding:40px;
-    border-radius:30px;
+    padding:clamp(20px, 4vw, 40px);
+    border-radius:24px;
     box-shadow:0 25px 60px rgba(0,0,0,.08);
     animation:fadeUp .6s ease;
+}
+
+@media (max-width:768px){
+    .container{
+        margin-top:100px;
+    }
+}
+
+@keyframes fadeUp{
+    from{opacity:0;transform:translateY(15px);}
+    to{opacity:1;transform:translateY(0);}
 }
 
 /* ===== Heading ===== */
 h2{
     text-align:center;
-    margin-bottom:30px;
-    font-size:28px;
+    margin-bottom:clamp(20px,3vw,30px);
+    font-size:clamp(22px,4vw,28px);
     background:linear-gradient(90deg,var(--primary-blue),var(--primary-green));
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
 }
 
-/* ===== FORM ROW (INLINE INPUT + BUTTON) ===== */
+/* ===== Form Layout ===== */
 .form-group{
     display:flex;
-    gap:15px;
-    align-items:center;
-    margin-bottom:30px;
+    gap:12px;
+    width:100%;
 }
 
+/* ===== Input ===== */
 input{
     flex:1;
-    padding:16px;
-    border-radius:18px;
+    padding:14px;
+    border-radius:14px;
     border:1px solid var(--border);
+    font-size:clamp(14px,2.5vw,15px);
     background:var(--soft-bg);
-    font-size:15px;
     transition:.3s;
+    min-width:0;
 }
 
 input:focus{
@@ -73,41 +85,23 @@ input:focus{
     background:white;
 }
 
+/* ===== Button ===== */
 button{
-    padding:14px 28px;
+    padding:14px 20px;
     border:none;
-    border-radius:18px;
+    border-radius:14px;
     font-weight:600;
-    font-size:15px;
+    font-size:clamp(14px,2.5vw,15px);
     background:linear-gradient(135deg,var(--primary-blue),var(--primary-green));
     color:white;
     cursor:pointer;
     transition:.3s;
+    white-space:nowrap;
 }
 
 button:hover{
     transform:translateY(-2px);
-    box-shadow:0 12px 25px rgba(37,99,235,.3);
-}
-
-/* ===== List ===== */
-.list{
-    margin-top:10px;
-}
-
-.item{
-    background:linear-gradient(90deg,var(--light-blue),var(--light-green));
-    padding:16px 20px;
-    border-radius:22px;
-    margin-bottom:18px;
-    border:1px solid var(--border);
-    transition:.3s;
-    font-size:16px;
-}
-
-.item:hover{
-    transform:translateX(6px);
-    box-shadow:0 8px 20px rgba(37,99,235,.15);
+    box-shadow:0 10px 25px rgba(37,99,235,.3);
 }
 
 /* ===== Success Message ===== */
@@ -115,22 +109,140 @@ button:hover{
     text-align:center;
     margin-bottom:20px;
     padding:12px;
-    border-radius:16px;
+    border-radius:14px;
+    font-size:14px;
     background:linear-gradient(90deg,#dcfce7,#f0fdf4);
     border:1px solid #22c55e;
     color:#166534;
     font-weight:600;
 }
 
-/* ===== Mobile ===== */
-@media(max-width:600px){
+/* ===== List ===== */
+.list{
+    margin-top:30px;
+}
+
+/* 🔥 UPDATED ITEM DESIGN */
+.item{
+    background:linear-gradient(90deg,#f0f9ff,#f0fdf4);
+    padding:14px 18px;
+    border-radius:16px;
+    margin-bottom:12px;
+    border:1px solid var(--border);
+    transition:.3s;
+    font-size:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+
+.item:hover{
+    transform:translateX(4px);
+    box-shadow:0 8px 20px rgba(37,99,235,.15);
+}
+
+/* ===== Edit Form ===== */
+.edit-form{
+    display:flex;
+    gap:10px;
+    width:100%;
+    align-items:center;
+}
+
+.edit-form input{
+    flex:1;
+    padding:10px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    font-size:14px;
+}
+
+/* ===== Icon Buttons ===== */
+.icon-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:6px;
+    transition:.2s;
+}
+
+.icon-btn.edit i{
+    color:var(--primary-blue);
+}
+
+.icon-btn.save i{
+    color:var(--primary-green);
+}
+
+.icon-btn.cancel i{
+    color:#ef4444;
+}
+
+.icon-btn:hover{
+    transform:scale(1.15);
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Tablet */
+@media(max-width:768px){
+    .container{
+        border-radius:20px;
+    }
+}
+
+/* Mobile */
+@media(max-width:500px){
+
+    body{
+        padding:15px;
+    }
 
     .form-group{
         flex-direction:column;
-        align-items:stretch;
     }
 
     button{
         width:100%;
     }
+
+    .item{
+        flex-direction:row;
+        font-size:13px;
+    }
+
+    .item:hover{
+        transform:none;
+    }
+}
+
+
+.action-buttons{
+    display:flex;
+    gap:12px;
+}
+
+.icon-btn.delete i{
+    color:#ef4444;
+}
+
+.icon-btn.delete:hover{
+    transform:scale(1.15);
+}
+
+.msg.success{
+    background:linear-gradient(90deg,#dcfce7,#f0fdf4);
+    border:1px solid #22c55e;
+    color:#166534;
+}
+
+.msg.error{
+    background:linear-gradient(90deg,#fee2e2,#fef2f2);
+    border:1px solid #ef4444;
+    color:#991b1b;
 }
