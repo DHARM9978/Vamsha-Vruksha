@@ -104,7 +104,7 @@ $data = $conn->query("SELECT * FROM Gothra ORDER BY Gotra_Name ASC");
 <head>
     <title>Gothra</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="../CSS/Gothara.css">
+    <link rel="stylesheet" href="../CSS/Common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 

@@ -109,7 +109,7 @@ $data = $conn->query("SELECT * FROM Sutra ORDER BY Sutra_Name ASC");
 <head>
     <title>Sutra </title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="../CSS/Sutra.css">
+    <link rel="stylesheet" href="../CSS/Common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 

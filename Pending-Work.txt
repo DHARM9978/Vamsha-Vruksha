@@ -1,0 +1,42 @@
+edit the database and add the father name and mother name - Done
+
+also add the slidebar and show all the pages that are there - Done
+
+and the boxes into the pages - Done
+
+also change the download PDF script for the laptop and phone -- Done
+
+also the family_details page will be fully responsive -- Almost Done
+
+Also add edit option into all the static tables like gothara, sutra,etc.. -- Done
+
+also showing by default data of gothara suthra and others native - Done 
+
+Sibling data from the head person and also the details of the wife and the data of the brother will be on the same indentation as the head person's data - Done
+
+Don't add if the data is already exist into the sutra and vamsha and other pages -- Done
+
+
+
+// Pending
+
+DO the reverese relation into the Add_Relation Page and also use timestamp while inserting the data into Add_Relation 
+
+
+Graph in hierarchy
+
+
+Segrigate the PHP codes
+
+
+Validations into the Remaining pages
+
+
+
+
+
+
+
+
+
+

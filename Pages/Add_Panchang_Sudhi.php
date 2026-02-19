@@ -113,7 +113,7 @@ $data = $conn->query("SELECT * FROM Panchang_Sudhi ORDER BY Panchang_Sudhi_Name 
 <title>Panchang Sudhi</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet" href="../CSS/Gothara.css">
+<link rel="stylesheet" href="../CSS/Common.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 </head>

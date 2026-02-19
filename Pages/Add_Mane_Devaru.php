@@ -108,7 +108,7 @@ $data = $conn->query("SELECT * FROM Mane_Devru ORDER BY Mane_Devru_Name ASC");
 <head>
     <title>Mane Devaru </title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="../CSS/mane_devaru.css">
+    <link rel="stylesheet" href="../CSS/Common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
