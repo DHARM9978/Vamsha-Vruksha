@@ -22,15 +22,13 @@ Don't add if the data is already exist into the sutra and vamsha and other pages
 
 DO the reverese relation into the Add_Relation Page and also use timestamp while inserting the data into Add_Relation 
 
-
 Graph in hierarchy
-
 
 Segrigate the PHP codes
 
-
 Validations into the Remaining pages
 
+also use preventDefault to remove the duplicate and autoform submission
 
 
 

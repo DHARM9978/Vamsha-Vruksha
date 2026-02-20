@@ -141,7 +141,7 @@ $data = $conn->query("SELECT * FROM Gothra ORDER BY Gotra_Name ASC");
     <!-- ADD FORM -->
     <form method="post">
         <div class="form-group">
-            <input name="name" placeholder="Enter Gothra Name" required>
+            <input name="name" placeholder="Enter Gothra Name" >
             <button name="save">Save</button>
         </div>
     </form>

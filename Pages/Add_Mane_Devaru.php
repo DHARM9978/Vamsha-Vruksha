@@ -143,7 +143,7 @@ if(isset($_GET['error'])){
 
         <form method="post">
             <div class="form-group">
-                <input name="name" placeholder="Enter Mane Devaru Name" required>
+                <input name="name" placeholder="Enter Mane Devaru Name" >
                 <button name="save">Save</button>
             </div>
         </form>
