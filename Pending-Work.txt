@@ -18,9 +18,11 @@ Don't add if the data is already exist into the sutra and vamsha and other pages
 
 
 
-// Pending
+
 
 DO the reverese relation into the Add_Relation Page and also use timestamp while inserting the data into Add_Relation 
+
+// Pending
 
 Graph in hierarchy
 
