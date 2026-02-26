@@ -40,7 +40,7 @@ if (isset($_GET['family']) && is_numeric($_GET['family'])) {
     $familyId = intval($_GET['family']);
 
     $stmt = $conn->prepare("
-        SELECT Person_Id 
+        SELECT Person_Id
         FROM PERSON 
         WHERE Family_Id=? 
         ORDER BY Person_Id ASC 
@@ -219,7 +219,7 @@ if(isset($_GET['q']) && trim($_GET['q'])!=''){
     $results=$stmt->get_result();
 }
 
-$familyList=$conn->query("SELECT Family_Id,Family_Name FROM FAMILY ORDER BY Family_Name ASC");
+$familyList=$conn->query("SELECT Family_Id,Reference_Id,Family_Name FROM FAMILY ORDER BY Family_Name ASC");
 ?>
 
 <link rel="stylesheet" href="../CSS/family_details.css">
@@ -253,7 +253,11 @@ $familyList=$conn->query("SELECT Family_Id,Family_Name FROM FAMILY ORDER BY Fami
         <h2>All Families</h2>
         <?php while($fam=$familyList->fetch_assoc()): ?>
         <a class="family-link" href="?family=<?= $fam['Family_Id'] ?>">
-            <?= htmlspecialchars($fam['Family_Name']) ?> (ID: <?= $fam['Family_Id'] ?>)
+           <?= htmlspecialchars($fam['Family_Name']) ?>
+
+            <?php if(!empty($fam['Reference_Id'])): ?>
+                (Ref ID: <?= htmlspecialchars($fam['Reference_Id']) ?>)
+            <?php endif; ?>
         </a>
         <?php endwhile; ?>
     </div>

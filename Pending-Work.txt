@@ -26,6 +26,8 @@ DO the reverese relation into the Add_Relation Page and also use timestamp while
 
 Graph in hierarchy
 
+Add reference_id into family table and also add the fields into the create_family table 
+
 Segrigate the PHP codes
 
 Validations into the Remaining pages

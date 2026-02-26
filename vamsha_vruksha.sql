@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 17, 2026 at 01:17 AM
+-- Generation Time: Feb 26, 2026 at 08:11 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -84,8 +84,8 @@ INSERT INTO `family_relation` (`Relation_Id`, `Person_Id`, `Related_Person_Id`, 
 (27, 23, 19, 'Daughter', '2026-01-10 10:55:53'),
 (29, 24, 19, 'Wife-Husband', '2026-01-10 10:57:44'),
 (30, 24, 19, 'Wife-Husband', '2026-01-10 10:57:44'),
-(31, 25, 2, 'Father', '2026-01-10 22:30:29'),
-(34, 27, 2, 'Mother', '2026-01-10 22:42:37'),
+(31, 25, 2, 'Son', '2026-01-10 22:30:29'),
+(34, 27, 2, 'Son', '2026-01-10 22:42:37'),
 (41, 28, 6, 'Wife-Husband', '2026-01-14 15:49:46'),
 (42, 6, 28, 'Husband-Wife', '2026-01-14 15:49:46'),
 (43, 29, 16, 'Father', '2026-01-14 15:52:02'),
@@ -103,7 +103,15 @@ INSERT INTO `family_relation` (`Relation_Id`, `Person_Id`, `Related_Person_Id`, 
 (59, 40, 39, 'Father', '2026-02-12 12:33:23'),
 (60, 39, 40, 'Son', '2026-02-12 12:33:23'),
 (61, 41, 39, 'Father', '2026-02-12 12:34:27'),
-(62, 39, 41, 'Son', '2026-02-12 12:34:27');
+(62, 39, 41, 'Son', '2026-02-12 12:34:27'),
+(63, 42, 36, 'Wife-Husband', '2026-02-17 06:06:43'),
+(64, 43, 36, 'Father', '2026-02-17 06:07:49'),
+(65, 44, 36, 'Father', '2026-02-17 06:08:30'),
+(66, 45, 43, 'Mother', '2026-02-17 06:16:01'),
+(67, 46, 2, 'Brother', '2026-02-19 11:44:03'),
+(71, 2, 47, 'Sister', '2026-02-21 00:14:40'),
+(72, 47, 2, 'Brother', '2026-02-21 00:14:40'),
+(73, 48, 10, 'Wife-Husband', '2026-02-23 08:26:36');
 
 -- --------------------------------------------------------
 
@@ -121,8 +129,8 @@ CREATE TABLE `gothra` (
 --
 
 INSERT INTO `gothra` (`Gotra_Id`, `Gotra_Name`) VALUES
-(3, 'Kashyapa'),
-(4, 'Bharadwaja');
+(4, 'Bharadwaja'),
+(3, 'Kashyapa');
 
 -- --------------------------------------------------------
 
@@ -224,7 +232,7 @@ INSERT INTO `person` (`Person_Id`, `Family_Id`, `First_Name`, `Last_Name`, `fath
 (10, 3, 'Hardikbhai', 'Bhadani', 'Kantibhai', 'Ramaben', 'Male', '2000-01-01', '1212121212', '1212121212', 'maulik@gmail.com', 'Shahpur', '0', 4, NULL, 2, 2, 1, 1, 2),
 (11, 3, 'Urvish', 'Bhadani', 'Bhaveshbhai', 'Naynaben', 'Male', '2001-01-01', '1212121212', '1212121212', 'urvish@gmail.com', 'Shahpur', '0', 4, NULL, 2, 2, 1, 1, 2),
 (12, 3, 'Dharm', 'Bhadani', 'Bhaveshbhai', 'Naynaben', 'Male', '2001-01-01', '1212121212', '12', 'dharm@gmail.com', 'Shahpur', '0', 4, 2, 2, 2, 1, 1, 2),
-(13, 3, 'Swasti', 'Bhadani', NULL, NULL, 'Female', '2001-01-01', '12121212121', '1212121212', 'swasti@gmail.com', 'Shahpur', '0', 4, NULL, 1, 2, 1, 1, 2),
+(13, 3, 'Swasti', 'Bhadani', '', '', 'Female', '2001-01-01', '12121212121', '1212121212', 'swasti@gmail.com', 'Shahpur', 'Surat', 4, 1, 1, 2, 1, 1, 2),
 (14, 3, 'Aarush', 'Bhadani', '', '', 'Male', '2001-01-01', '1212121212', '12', 'aarush@gmail.com', 'Shahpur', 'Surat', 4, NULL, 2, 2, 1, 1, 2),
 (15, 4, 'Ghanshyambhai', 'Donda', NULL, NULL, 'Male', '1999-01-01', '1212121212', '12', 'ghanshayam@gmail.com', 'Nari', '0', 4, NULL, 2, 2, 1, 1, 2),
 (16, 5, 'Vallabhai', 'Ghasadiya', NULL, NULL, 'Male', '1999-01-01', '1212121212', '12', 'vallabhbhai@gmail.com', 'Shahpur', '0', 3, 2, 1, 1, 2, 2, 1),
@@ -245,7 +253,14 @@ INSERT INTO `person` (`Person_Id`, `Family_Id`, `First_Name`, `Last_Name`, `fath
 (36, 3, 'Vallabhabhai', 'Bhadani', NULL, NULL, 'Male', '1999-01-01', '1212121212', '1212121212', 'demo@gmail.com', 'Shahpur', '0', 4, NULL, 2, 2, 1, 1, 2),
 (39, 11, 'Demo', 'Hello', 'Demo', 'Demo', 'Male', '0000-00-00', '1212121212', '1212121212', 'Demo@gmail.com', 'Demo', 'Demo', 4, 1, 2, 2, 1, 2, 2),
 (40, 11, 'Demo', 'Demo', 'Demo', 'Demo', 'Male', '0001-10-01', '1212121212', '1212121212', 'demo@gmail.com', 'Demo', '0', 4, 1, 2, 2, 1, 1, 2),
-(41, 11, 'Demo SOn', 'Demo', 'Demo', 'Demo', 'Male', '1000-01-01', '1212121212', '1212121212', 'demo@gmail.com', 'Demo', '0', 4, 1, 2, 2, 1, 1, 2);
+(41, 11, 'Demo SOn', 'Demo', 'Demo', 'Demo', 'Male', '1000-01-01', '1212121212', '1212121212', 'demo@gmail.com', 'Demo', '0', 4, 1, 2, 2, 1, 1, 2),
+(42, 3, 'Hansaben', 'Bhadani', 'Demo', 'Demo', 'Female', '1999-01-01', '1212121212', '1212121212', 'demo@gamil.com', 'Demo', '0', 4, 1, 2, 2, 1, 2, 2),
+(43, 3, 'Digisha ', 'Bhadani', 'Vallabhbhai', 'Hansaben', 'Female', '1999-01-01', '1212121212', '1212121212', 'Demo@gmaill.com', 'Shahpur', '0', 4, 1, 2, 2, 1, 1, 2),
+(44, 3, 'Rutvik', 'Bhadani', 'Vallabhbhai', 'Hansaben', 'Male', '1999-01-01', '1212121212', '1212121212', 'demo@gmail.cpm', 'Demo', '0', 4, 1, 2, 2, 1, 1, 2),
+(45, 3, 'Shivansh', 'Anghan', 'Jainish', 'Digisha', 'Male', '1999-01-01', '1212121212', '1212121212', 'Demo@gamil.com', 'senjaliya', '0', 4, 1, 2, 2, 1, 1, 2),
+(46, 3, 'Bhaguben', 'Bhadani', 'Talashibhai', 'Kuvarben', 'Female', '1999-01-01', '1212121212', '1212121212', 'demo@gmail.com', 'Shahpur', '0', 4, 1, 2, 2, 1, 1, 2),
+(47, 3, 'Jivi Ben', 'Bhadani', 'Talashibhai', 'Kuvarben', 'Female', '1999-01-01', '1212121212', '1212121212', 'demo@gmail.com', 'Shahpur', '0', 4, 1, 2, 2, 1, 1, 2),
+(48, 3, 'Mamataben', 'Kakadiya', 'Kaka', 'Mummy', 'Female', '1099-01-01', '1212121212', '1212121212', 'demo@gmail.com', 'Chogath', '0', 3, 2, 1, 1, 2, 2, 1);
 
 -- --------------------------------------------------------
 
@@ -327,7 +342,8 @@ ALTER TABLE `family_relation`
 -- Indexes for table `gothra`
 --
 ALTER TABLE `gothra`
-  ADD PRIMARY KEY (`Gotra_Id`);
+  ADD PRIMARY KEY (`Gotra_Id`),
+  ADD UNIQUE KEY `Gotra_Name` (`Gotra_Name`);
 
 --
 -- Indexes for table `kula_devatha`
@@ -393,55 +409,55 @@ ALTER TABLE `family`
 -- AUTO_INCREMENT for table `family_relation`
 --
 ALTER TABLE `family_relation`
-  MODIFY `Relation_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+  MODIFY `Relation_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
 -- AUTO_INCREMENT for table `gothra`
 --
 ALTER TABLE `gothra`
-  MODIFY `Gotra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `Gotra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `kula_devatha`
 --
 ALTER TABLE `kula_devatha`
-  MODIFY `Kula_Devatha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Kula_Devatha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `mane_devru`
 --
 ALTER TABLE `mane_devru`
-  MODIFY `Mane_Devru_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Mane_Devru_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `panchang_sudhi`
 --
 ALTER TABLE `panchang_sudhi`
-  MODIFY `Panchang_Sudhi_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Panchang_Sudhi_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `person`
 --
 ALTER TABLE `person`
-  MODIFY `Person_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `Person_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `pooja_vruksha`
 --
 ALTER TABLE `pooja_vruksha`
-  MODIFY `Pooja_Vruksha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Pooja_Vruksha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `sutra`
 --
 ALTER TABLE `sutra`
-  MODIFY `Sutra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Sutra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `vamsha`
 --
 ALTER TABLE `vamsha`
-  MODIFY `Vamsha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Vamsha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables

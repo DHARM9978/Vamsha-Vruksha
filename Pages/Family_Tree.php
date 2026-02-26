@@ -39,7 +39,7 @@ if(isset($_GET['q']) && trim($_GET['q']) !== ''){
 
 /* ================= LOAD FAMILIES ================= */
 
-$familyList = $conn->query("SELECT Family_Id, Family_Name FROM FAMILY ORDER BY Family_Name ASC");
+$familyList = $conn->query("SELECT Family_Id, Family_Name, Reference_Id FROM FAMILY ORDER BY Family_Name ASC");
 
 /* ================= BUILD DATASET (UNCHANGED) ================= */
 
@@ -176,12 +176,14 @@ if($selectedPerson){
         <h2>All Families</h2>
 
         <?php while($fam=$familyList->fetch_assoc()): ?>
-        <a class="family-link" href="?family=<?= $fam['Family_Id'] ?>">
+            <a class="family-link" href="?family=<?= $fam['Family_Id'] ?>">
             <?= htmlspecialchars($fam['Family_Name']) ?>
-            (ID: <?= $fam['Family_Id'] ?>)
-        </a>
-        <?php endwhile; ?>
 
+            <?php if(!empty($fam['Reference_Id'])): ?>
+                (Ref ID: <?= htmlspecialchars($fam['Reference_Id']) ?>)
+            <?php endif; ?>
+        </a>
+<?php endwhile; ?>
     </div>
 
 </div>
@@ -212,23 +214,35 @@ nodes.forEach(n => {
     });
 });
 
-edges.forEach(e => {
+edges.forEach((e, index) => {
+
+    let isMarriage = (
+        e.Relation_Type === 'Husband-Wife' ||
+        e.Relation_Type === 'Wife-Husband'
+    );
+
     elements.push({
         data: {
+            id: 'e' + index,
             source: String(e.Person_Id),
             target: String(e.Related_Person_Id),
-            label: e.Relation_Type
+            label: e.Relation_Type,
+            type: isMarriage ? 'marriage' : 'parent'
         }
     });
+
 });
 
 const cy = cytoscape({
     container: document.getElementById('cy'),
     elements,
-    style: [{
+    style: [
+
+        {
             selector: 'node',
             style: {
-                'background-color': ele => ele.data('gender') == 'Male' ? '#2563eb' : '#ec4899',
+                'background-color': ele => 
+                    ele.data('gender') == 'Male' ? '#2563eb' : '#ec4899',
                 'label': 'data(label)',
                 'width': 150,
                 'height': 160,
@@ -237,14 +251,36 @@ const cy = cytoscape({
                 'text-halign': 'center'
             }
         },
+
         {
             selector: 'edge',
             style: {
+                'curve-style': 'bezier',
+                'control-point-step-size': 40,
+                'label': 'data(label)',
+                'font-size': 10,
+                'text-background-color': '#fff',
+                'text-background-opacity': 1,
+                'text-background-padding': 2
+            }
+        },
+
+        {
+            selector: 'edge[type="marriage"]',
+            style: {
+                'line-color': '#f59e0b',
+                'target-arrow-shape': 'none'
+            }
+        },
+
+        {
+            selector: 'edge[type="parent"]',
+            style: {
                 'line-color': '#94a3b8',
-                'target-arrow-shape': 'triangle',
-                'label': 'data(label)'
+                'target-arrow-shape': 'triangle'
             }
         }
+
     ],
     layout: {
         name: 'dagre',
@@ -255,5 +291,4 @@ const cy = cytoscape({
     }
 });
 </script>
-
 <?php endif; ?>
