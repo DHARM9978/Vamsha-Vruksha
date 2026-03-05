@@ -1,310 +1,221 @@
+
+<?php
+include "conn.php";
+
+$message="";
+
+if(isset($_POST['signup'])){
+
+$name   = trim($_POST['name']);
+$email  = trim($_POST['email']);
+$mobile = trim($_POST['mobile']);
+$password = $_POST['password'];
+
+$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+/* CHECK IF EMAIL OR MOBILE ALREADY EXISTS */
+
+$check = $conn->prepare("
+SELECT user_email, user_phone_number 
+FROM user_login 
+WHERE user_email=? OR user_phone_number=?
+");
+
+$check->bind_param("ss",$email,$mobile);
+$check->execute();
+$result = $check->get_result();
+
+$emailExists = false;
+$mobileExists = false;
+
+while($row = $result->fetch_assoc()){
+
+if($row['user_email'] == $email){
+$emailExists = true;
+}
+
+if($row['user_phone_number'] == $mobile){
+$mobileExists = true;
+}
+
+}
+
+/* SHOW ERROR IF EXISTS */
+
+if($emailExists || $mobileExists){
+
+if($emailExists){
+$message .= "Email already registered.<br>";
+}
+
+if($mobileExists){
+$message .= "Mobile number already registered.";
+}
+
+}
+else{
+
+$stmt = $conn->prepare("
+INSERT INTO user_login
+(user_name,user_email,user_phone_number,password,role)
+VALUES (?,?,?,?,'User')
+");
+
+$stmt->bind_param("ssss",$name,$email,$mobile,$hashedPassword);
+
+if($stmt->execute()){
+$message = "Signup successful! You can now login.";
+}
+else{
+$message = "Error creating account.";
+}
+
+}
+
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
 <title>Create Account</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:"Segoe UI",sans-serif;
-}
+<link rel="stylesheet" href="../CSS/SignUp.css">
 
-body{
-    min-height:100vh;
-    background:#f4f6f8;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.signup-card{
-    width:100%;
-    max-width:420px;
-    background:#fff;
-    border-radius:18px;
-    padding:35px 30px;
-    box-shadow:0 15px 40px rgba(0,0,0,0.08);
-    animation:fadeSlide 0.6s ease;
-}
-
-@keyframes fadeSlide{
-    from{opacity:0;transform:translateY(25px);}
-    to{opacity:1;transform:translateY(0);}
-}
-
-.icon-circle{
-    width:60px;
-    height:60px;
-    background:#eef4ff;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:0 auto 20px;
-}
-
-.icon-circle i{
-    color:#3b82f6;
-    font-size:22px;
-}
-
-h1{
-    text-align:center;
-    font-size:26px;
-    color:#111827;
-}
-
-.subtitle{
-    text-align:center;
-    font-size:14px;
-    color:#6b7280;
-    margin:6px 0 25px;
-}
-
-.form-group{
-    position:relative;
-    margin-bottom:18px;
-}
-
-.left-icon{
-    position:absolute;
-    top:50%;
-    left:14px;
-    transform:translateY(-50%);
-    color:#9ca3af;
-    font-size:14px;
-}
-
-.form-group input{
-    width:100%;
-    padding:14px 48px 14px 42px;
-    border-radius:10px;
-    border:1px solid #e5e7eb;
-    outline:none;
-    font-size:14px;
-    transition:0.3s;
-}
-
-.form-group input:focus{
-    border-color:#3b82f6;
-    box-shadow:0 0 0 3px rgba(59,130,246,0.15);
-}
-
-.toggle-password{
-    position:absolute;
-    right:14px;
-    top:50%;
-    transform:translateY(-50%);
-    cursor:pointer;
-    color:#9ca3af;
-    transition:0.3s;
-}
-
-.toggle-password:hover{
-    color:#3b82f6;
-    transform:translateY(-50%) scale(1.15);
-}
-
-.error{
-    font-size:12px;
-    color:#ef4444;
-    margin-top:4px;
-    display:none;
-}
-
-.form-group.invalid input{
-    border-color:#ef4444;
-}
-
-.password-hint{
-    font-size:12px;
-    color:#6b7280;
-    margin:-8px 0 14px;
-}
-
-.btn{
-    width:100%;
-    background:#3b82f6;
-    border:none;
-    color:#fff;
-    padding:14px;
-    font-size:15px;
-    border-radius:12px;
-    cursor:pointer;
-    transition:0.3s;
-    box-shadow:0 8px 20px rgba(59,130,246,0.35);
-}
-
-.btn:hover{
-    background:#2563eb;
-    transform:translateY(-1px);
-}
-
-.login-text{
-    text-align:center;
-    font-size:14px;
-    color:#6b7280;
-    margin-top:18px;
-}
-
-.login-text a{
-    color:#3b82f6;
-    font-weight:600;
-    text-decoration:none;
-}
-</style>
 </head>
+
 <body>
 
 <div class="signup-card">
 
-    <div class="icon-circle">
-        <i class="fa-solid fa-heart"></i>
-    </div>
+<div class="icon-circle">
+<i class="fa-solid fa-user-plus"></i>
+</div>
 
-    <h1>Create your account</h1>
-    <p class="subtitle">Join our family community today</p>
+<h1>Create Account</h1>
+<p class="subtitle">Join our family community</p>
 
-    <form id="signupForm">
+<?php if($message!=""){ ?>
+<div class="msg">
+<?php echo $message ?>
+</div>
+<?php } ?>
 
-        <!-- Full Name -->
-        <div class="form-group">
-            <i class="fa-regular fa-user left-icon"></i>
-            <input type="text" id="name" placeholder="Full Name">
-            <div class="error">Minimum 3 characters required</div>
-        </div>
+<form id="signupForm" method="POST">
 
-        <!-- Email -->
-        <div class="form-group">
-            <i class="fa-regular fa-envelope left-icon"></i>
-            <input type="email" id="email" placeholder="Email Address">
-            <div class="error">Enter valid email address</div>
-        </div>
+<!-- NAME -->
 
-        <!-- Mobile Number -->
-        <div class="form-group">
-            <i class="fa-solid fa-mobile-screen left-icon"></i>
-            <input type="text"
-                   id="mobile"
-                   placeholder="Mobile Number"
-                   maxlength="10"
-                   oninput="allowOnlyNumbers(this)">
-            <div class="error">Enter 10 digit mobile number</div>
-        </div>
+<div class="form-group">
+<i class="fa-solid fa-user left-icon"></i>
+<input 
+type="text"
+id="name"
+name="name"
+placeholder="Full Name"
+required
+>
+<div class="error">Enter your name</div>
+</div>
 
-        <!-- Password -->
-        <div class="form-group">
-            <i class="fa-solid fa-lock left-icon"></i>
-            <input type="password" id="password" placeholder="Password">
-            <i class="fa-regular fa-eye toggle-password"
-               onclick="togglePassword('password', this)"></i>
-            <div class="error">Password must be strong</div>
-        </div>
+<!-- EMAIL -->
 
-        <div class="password-hint">
-            At least 8 characters, 1 uppercase letter, 1 number
-        </div>
+<div class="form-group">
+<i class="fa-regular fa-envelope left-icon"></i>
+<input 
+type="email"
+id="email"
+name="email"
+placeholder="Email Address"
+required
+>
+<div class="error">Enter valid email address</div>
+</div>
 
-        <!-- Confirm Password -->
-        <div class="form-group">
-            <i class="fa-solid fa-lock left-icon"></i>
-            <input type="password"
-                   id="confirmPassword"
-                   placeholder="Confirm Password"
-                   onkeyup="liveConfirmPassword()">
-            <i class="fa-regular fa-eye toggle-password"
-               onclick="togglePassword('confirmPassword', this)"></i>
-            <div class="error">Passwords do not match</div>
-        </div>
+<!-- MOBILE -->
 
-        <button type="submit" class="btn">Sign Up</button>
+<div class="form-group">
+<i class="fa-solid fa-mobile-screen left-icon"></i>
+<input 
+type="text"
+id="mobile"
+name="mobile"
+placeholder="Mobile Number"
+maxlength="10"
+required
+>
+<div class="error">Enter 10 digit mobile number</div>
+</div>
 
-    </form>
+<!-- PASSWORD -->
 
-    <div class="login-text">
-        Already have an account? <a href="#">Login</a>
-    </div>
+<div class="form-group">
+<i class="fa-solid fa-lock left-icon"></i>
+
+<input 
+type="password"
+id="password"
+name="password"
+placeholder="Password"
+required
+>
+
+<i class="fa-regular fa-eye toggle-password"
+onclick="togglePassword('password',this)"></i>
+
+<div class="error">
+Password must contain uppercase and number
+</div>
 
 </div>
 
-<script>
-function togglePassword(id, icon){
-    const input = document.getElementById(id);
-    if(input.type === "password"){
-        input.type = "text";
-        icon.classList.replace("fa-eye","fa-eye-slash");
-    }else{
-        input.type = "password";
-        icon.classList.replace("fa-eye-slash","fa-eye");
-    }
-}
+<div class="password-hint">
+At least 8 characters, 1 uppercase letter, 1 number
+</div>
 
-/* Allow only digits in mobile input */
-function allowOnlyNumbers(input){
-    input.value = input.value.replace(/[^0-9]/g,"");
-}
+<!-- CONFIRM PASSWORD -->
 
-/* Live confirm password validation */
-function liveConfirmPassword(){
-    const password = document.getElementById("password").value;
-    const confirm = document.getElementById("confirmPassword");
-    const group = confirm.parentElement;
-    const error = group.querySelector(".error");
+<div class="form-group">
 
-    if(confirm.value === ""){
-        group.classList.remove("invalid");
-        error.style.display = "none";
-        return;
-    }
+<i class="fa-solid fa-lock left-icon"></i>
 
-    if(confirm.value !== password){
-        group.classList.add("invalid");
-        error.style.display = "block";
-    }else{
-        group.classList.remove("invalid");
-        error.style.display = "none";
-    }
-}
+<input
+type="password"
+id="confirmPassword"
+placeholder="Confirm Password"
+required
+>
 
-/* Submit validation */
-document.getElementById("signupForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    let valid = true;
+<i class="fa-regular fa-eye toggle-password"
+onclick="togglePassword('confirmPassword',this)"></i>
 
-    valid &= validate("name", v => v.length >= 3);
-    valid &= validate("email", v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
-    valid &= validate("mobile", v => /^[0-9]{10}$/.test(v));
-    valid &= validate("password", v => /^(?=.*[A-Z])(?=.*\d).{8,}$/.test(v));
-    valid &= validate("confirmPassword", v => v === password.value);
+<div class="error">
+Passwords do not match
+</div>
 
-    if(valid){
-        alert("Form validated successfully!");
-    }
-});
+</div>
 
-function validate(id, rule){
-    const input = document.getElementById(id);
-    const group = input.parentElement;
-    const error = group.querySelector(".error");
+<button type="submit" name="signup" class="btn">
+Sign Up
+</button>
 
-    if(!rule(input.value.trim())){
-        group.classList.add("invalid");
-        error.style.display = "block";
-        return false;
-    }else{
-        group.classList.remove("invalid");
-        error.style.display = "none";
-        return true;
-    }
-}
-</script>
+</form>
+
+<div class="login-text">
+Already have an account?
+<a href="login.php">Login</a>
+</div>
+
+</div>
+
+<script src="../JavaScript/SignUp.js"></script>
 
 </body>
 </html>
+

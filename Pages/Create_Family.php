@@ -1,6 +1,8 @@
 <?php
 include "conn.php";
 require "Navbar.php";
+include "auth_check.php";
+include "admin_only.php";
 
 $success = "";
 

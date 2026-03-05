@@ -1,6 +1,7 @@
 <?php
 include "conn.php";
 require "Navbar.php";
+include "auth_check.php";
 /* =========================================================
    ROOT PERSON DETECTION (FINAL CORRECT VERSION)
 ========================================================= */

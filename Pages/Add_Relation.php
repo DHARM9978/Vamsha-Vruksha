@@ -1,4 +1,7 @@
 <?php
+include "auth_check.php";
+include "admin_only.php";
+
 // ---------- AJAX HANDLER ----------
 if (isset($_POST['action'])) {
 

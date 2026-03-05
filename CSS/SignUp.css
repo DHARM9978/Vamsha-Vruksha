@@ -1,0 +1,144 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e0f2fe, #dcfce7);
+    padding: 20px;
+}
+
+.signup-card {
+    width: 100%;
+    max-width: 420px;
+    background: white;
+    border-radius: 18px;
+    padding: 35px 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    animation: cardFade .7s ease;
+}
+
+@keyframes cardFade {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    background: #e0f2fe;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.icon-circle i {
+    color: #2563eb;
+    font-size: 22px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 24px;
+    color: #111827;
+}
+
+.subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    margin: 6px 0 25px;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.left-icon {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    transform: translateY(-50%);
+    color: #9ca3af;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px 45px 14px 42px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    outline: none;
+    font-size: 14px;
+    transition: .25s;
+}
+
+.form-group input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #9ca3af;
+}
+
+.error {
+    font-size: 12px;
+    color: #ef4444;
+    margin-top: 4px;
+    display: none;
+}
+
+.form-group.invalid input {
+    border-color: #ef4444;
+}
+
+.password-hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin: -8px 0 14px;
+}
+
+.btn {
+    width: 100%;
+    background: linear-gradient(135deg, #3b82f6, #22c55e);
+    border: none;
+    color: white;
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.login-text {
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 18px;
+}
+
+.msg {
+    text-align: center;
+    margin-bottom: 10px;
+    color: red;
+}
