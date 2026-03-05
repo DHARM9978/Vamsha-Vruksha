@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 02, 2026 at 01:16 PM
+-- Generation Time: Mar 05, 2026 at 05:31 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `vamsha_vruksha`
+-- Database: `default_data_vamsha_vruksha`
 --
 
 -- --------------------------------------------------------
@@ -204,6 +204,22 @@ INSERT INTO `sutra` (`Sutra_Id`, `Sutra_Name`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `user_login`
+--
+
+CREATE TABLE `user_login` (
+  `user_id` int(11) NOT NULL,
+  `user_name` varchar(100) NOT NULL,
+  `user_email` varchar(150) NOT NULL,
+  `user_phone_number` varchar(15) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('Admin','User') DEFAULT 'User',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `vamsha`
 --
 
@@ -328,6 +344,14 @@ ALTER TABLE `sutra`
   ADD PRIMARY KEY (`Sutra_Id`);
 
 --
+-- Indexes for table `user_login`
+--
+ALTER TABLE `user_login`
+  ADD PRIMARY KEY (`user_id`),
+  ADD UNIQUE KEY `user_email` (`user_email`),
+  ADD UNIQUE KEY `user_phone_number` (`user_phone_number`);
+
+--
 -- Indexes for table `vamsha`
 --
 ALTER TABLE `vamsha`
@@ -390,6 +414,12 @@ ALTER TABLE `pooja_vruksha`
 --
 ALTER TABLE `sutra`
   MODIFY `Sutra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `user_login`
+--
+ALTER TABLE `user_login`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `vamsha`

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 26, 2026 at 08:11 AM
+-- Generation Time: Mar 05, 2026 at 06:09 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -29,6 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `family` (
   `Family_Id` int(11) NOT NULL,
+  `Reference_Id` int(11) DEFAULT NULL,
   `Family_Name` varchar(255) NOT NULL,
   `Native_Place` varchar(255) DEFAULT NULL,
   `Head_DOB` date DEFAULT NULL,
@@ -40,13 +41,13 @@ CREATE TABLE `family` (
 -- Dumping data for table `family`
 --
 
-INSERT INTO `family` (`Family_Id`, `Family_Name`, `Native_Place`, `Head_DOB`, `Gotra_Id`, `Created_At`) VALUES
-(3, 'Kantibhai', 'shahpur', '1999-01-01', 4, '2026-01-09 15:10:42'),
-(4, 'Khijamjibhai donda', 'nari', '1999-01-01', 3, '2026-01-09 15:18:12'),
-(5, 'Vallabhbhai Ghasadiya', 'Shahpur', '1999-01-01', 3, '2026-01-09 23:41:10'),
-(7, 'Kamleshbhai Kakadiya', 'patana', '1999-01-01', 4, '2026-01-10 10:35:53'),
-(8, 'Demo Family', 'demo', '2000-01-09', 4, '2026-02-09 00:42:44'),
-(11, 'Demo', 'Demo', '0000-00-00', 4, '2026-02-12 11:32:21');
+INSERT INTO `family` (`Family_Id`, `Reference_Id`, `Family_Name`, `Native_Place`, `Head_DOB`, `Gotra_Id`, `Created_At`) VALUES
+(3, 1, 'Kantibhai', 'shahpur', '1999-01-01', 4, '2026-01-09 15:10:42'),
+(4, 2, 'Khijamjibhai donda', 'nari', '1999-01-01', 3, '2026-01-09 15:18:12'),
+(5, 3, 'Vallabhbhai Ghasadiya', 'Shahpur', '1999-01-01', 3, '2026-01-09 23:41:10'),
+(7, 4, 'Kamleshbhai Kakadiya', 'patana', '1999-01-01', 4, '2026-01-10 10:35:53'),
+(8, NULL, 'Demo Family', 'demo', '2000-01-09', 4, '2026-02-09 00:42:44'),
+(11, NULL, 'Demo', 'Demo', '0000-00-00', 4, '2026-02-12 11:32:21');
 
 -- --------------------------------------------------------
 
@@ -303,6 +304,32 @@ INSERT INTO `sutra` (`Sutra_Id`, `Sutra_Name`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `user_login`
+--
+
+CREATE TABLE `user_login` (
+  `user_id` int(11) NOT NULL,
+  `user_name` varchar(100) NOT NULL,
+  `user_email` varchar(150) NOT NULL,
+  `user_phone_number` varchar(15) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('Admin','User') DEFAULT 'User',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_login`
+--
+
+INSERT INTO `user_login` (`user_id`, `user_name`, `user_email`, `user_phone_number`, `password`, `role`, `created_at`) VALUES
+(1, 'Demo', 'demo@gmail.com', '1212121212', '$2y$10$atSKsFvoUqHepJC/R85v9ui8T7KVLLczveUMue9xnbbB5b2IeL8qy', 'User', '2026-03-04 16:18:34'),
+(2, 'Dharm', 'dharm@gmail.com', '1231231231', '$2y$10$uSuzxtSQNGN.G7jGC0YBsubbr4UliJrtadn3Oc9LAmbw/T8dw4nBO', 'User', '2026-03-04 17:53:06'),
+(4, 'Demo2', 'demo2@gmail.com', '1234123412', '$2y$10$.fuQag.qIi6UHiRghaEAkuI5iZTLkwQb0/FygL66mDiNYL6/WgIne', 'User', '2026-03-04 18:59:37'),
+(6, '', 'dharm2@gmail.com', '1234567890', '$2y$10$QTJZAj2EeuMgSDf2UBDgYe06N9FZ1griieiYqzUCuWGDSFaXQ33ce', 'User', '2026-03-05 05:06:31');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `vamsha`
 --
 
@@ -390,6 +417,14 @@ ALTER TABLE `sutra`
   ADD PRIMARY KEY (`Sutra_Id`);
 
 --
+-- Indexes for table `user_login`
+--
+ALTER TABLE `user_login`
+  ADD PRIMARY KEY (`user_id`),
+  ADD UNIQUE KEY `user_email` (`user_email`),
+  ADD UNIQUE KEY `user_phone_number` (`user_phone_number`);
+
+--
 -- Indexes for table `vamsha`
 --
 ALTER TABLE `vamsha`
@@ -403,7 +438,7 @@ ALTER TABLE `vamsha`
 -- AUTO_INCREMENT for table `family`
 --
 ALTER TABLE `family`
-  MODIFY `Family_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `Family_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `family_relation`
@@ -439,7 +474,7 @@ ALTER TABLE `panchang_sudhi`
 -- AUTO_INCREMENT for table `person`
 --
 ALTER TABLE `person`
-  MODIFY `Person_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `Person_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `pooja_vruksha`
@@ -452,6 +487,12 @@ ALTER TABLE `pooja_vruksha`
 --
 ALTER TABLE `sutra`
   MODIFY `Sutra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `user_login`
+--
+ALTER TABLE `user_login`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `vamsha`
