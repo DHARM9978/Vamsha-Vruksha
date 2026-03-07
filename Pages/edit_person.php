@@ -1,8 +1,9 @@
 <?php
 ob_start();
-include "conn.php";
+
 include "auth_check.php";
 include "admin_only.php";
+include "conn.php";
 
 /* ================= AJAX ================= */
 

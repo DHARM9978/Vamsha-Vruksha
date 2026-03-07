@@ -1,9 +1,9 @@
 <?php
 ob_start();
-include "conn.php";
+
 include "auth_check.php";
 include "admin_only.php";
-
+include "conn.php";
 /* ================= AJAX ================= */
 if(isset($_GET['action'])){
     header('Content-Type: application/json');
@@ -56,7 +56,7 @@ if(isset($_GET['action'])){
     }
 }
 
-require "Navbar.php";
+include "Navbar.php";
 
 /* ================= SAVE PERSON ================= */
 if(isset($_POST['save'])){

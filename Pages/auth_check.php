@@ -1,16 +1,19 @@
-
 <?php
 
-/* START SESSION ONLY IF NOT STARTED */
 if(session_status() === PHP_SESSION_NONE){
     session_start();
 }
 
-/* CHECK LOGIN */
+/* PREVENT CACHING */
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+/* SESSION CHECK */
+
 if(!isset($_SESSION['user_id'])){
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit();
 }
 
 ?>
-

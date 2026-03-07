@@ -1,5 +1,6 @@
 <?php
-
+include "auth_check.php";
+include "conn.php";
 include('Navbar.php');
 
 /* START SESSION SAFELY */
@@ -7,8 +8,7 @@ if(session_status() === PHP_SESSION_NONE){
 session_start();
 }
 
-include "auth_check.php";
-include "conn.php";
+
 
 /* FLASH MESSAGE FUNCTION */
 

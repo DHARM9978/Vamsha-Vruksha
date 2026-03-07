@@ -2,9 +2,11 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-include "admin_only.php";
+
 include "auth_check.php";
+include "admin_only.php";
 include "conn.php";
+
 
 /* ================= ADD ================= */
 if(isset($_POST['save'])){

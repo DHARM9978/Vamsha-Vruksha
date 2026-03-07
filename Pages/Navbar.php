@@ -168,6 +168,15 @@ session_start();
             document.getElementById("overlay").classList.toggle("active");
         }
     </script>
+
+    <script>
+  // If the page is loaded from the browser's back/forward cache, force reload
+  window.addEventListener("pageshow", function (event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
+</script>
 </body>
 
 </html>
