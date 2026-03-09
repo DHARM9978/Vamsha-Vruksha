@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 05, 2026 at 05:33 PM
+-- Generation Time: Mar 09, 2026 at 11:26 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `no_data_vamsha_vruksha`
+-- Database: `vamsha_vruksha`
 --
 
 -- --------------------------------------------------------
@@ -29,6 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `family` (
   `Family_Id` int(11) NOT NULL,
+  `Reference_Id` int(11) DEFAULT NULL,
   `Family_Name` varchar(255) NOT NULL,
   `Native_Place` varchar(255) DEFAULT NULL,
   `Head_DOB` date DEFAULT NULL,
@@ -37,7 +38,6 @@ CREATE TABLE `family` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
-
 --
 -- Table structure for table `family_relation`
 --
@@ -50,7 +50,9 @@ CREATE TABLE `family_relation` (
   `Created_At` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
+
+
+
 
 --
 -- Table structure for table `gothra`
@@ -71,6 +73,7 @@ CREATE TABLE `kula_devatha` (
   `Kula_Devatha_Id` int(11) NOT NULL,
   `Kula_Devatha_Name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 -- --------------------------------------------------------
 
@@ -94,6 +97,7 @@ CREATE TABLE `panchang_sudhi` (
   `Panchang_Sudhi_Name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
 -- --------------------------------------------------------
 
 --
@@ -105,6 +109,8 @@ CREATE TABLE `person` (
   `Family_Id` int(11) DEFAULT NULL,
   `First_Name` varchar(255) DEFAULT NULL,
   `Last_Name` varchar(255) DEFAULT NULL,
+  `father_name` varchar(100) DEFAULT NULL,
+  `mother_name` varchar(100) DEFAULT NULL,
   `Gender` varchar(20) DEFAULT NULL,
   `DOB` date DEFAULT NULL,
   `Phone_Number` varchar(20) DEFAULT NULL,
@@ -131,6 +137,7 @@ CREATE TABLE `pooja_vruksha` (
   `Pooja_Vruksha_Id` int(11) NOT NULL,
   `Pooja_Vruksha_Name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 -- --------------------------------------------------------
 
@@ -170,30 +177,28 @@ CREATE TABLE `vamsha` (
   `Vamsha_Name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Indexes for dumped tables
---
 
 --
 -- Indexes for table `family`
 --
 ALTER TABLE `family`
   ADD PRIMARY KEY (`Family_Id`),
-  ADD KEY `family_ibfk_1` (`Gotra_Id`);
+  ADD KEY `Gotra_Id` (`Gotra_Id`);
 
 --
 -- Indexes for table `family_relation`
 --
 ALTER TABLE `family_relation`
   ADD PRIMARY KEY (`Relation_Id`),
-  ADD KEY `family_relation_ibfk_1` (`Person_Id`),
-  ADD KEY `family_relation_ibfk_2` (`Related_Person_Id`);
+  ADD KEY `Person_Id` (`Person_Id`),
+  ADD KEY `Related_Person_Id` (`Related_Person_Id`);
 
 --
 -- Indexes for table `gothra`
 --
 ALTER TABLE `gothra`
-  ADD PRIMARY KEY (`Gotra_Id`);
+  ADD PRIMARY KEY (`Gotra_Id`),
+  ADD UNIQUE KEY `Gotra_Name` (`Gotra_Name`);
 
 --
 -- Indexes for table `kula_devatha`
@@ -218,14 +223,14 @@ ALTER TABLE `panchang_sudhi`
 --
 ALTER TABLE `person`
   ADD PRIMARY KEY (`Person_Id`),
-  ADD KEY `person_ibfk_1` (`Family_Id`),
-  ADD KEY `person_ibfk_2` (`Gotra_Id`),
-  ADD KEY `person_ibfk_3` (`Sutra_Id`),
-  ADD KEY `person_ibfk_4` (`Panchang_Sudhi_Id`),
-  ADD KEY `person_ibfk_5` (`Vamsha_Id`),
-  ADD KEY `person_ibfk_6` (`Mane_Devru_Id`),
-  ADD KEY `person_ibfk_7` (`Kula_Devatha_Id`),
-  ADD KEY `person_ibfk_8` (`Pooja_Vruksha_Id`);
+  ADD KEY `Family_Id` (`Family_Id`),
+  ADD KEY `Gotra_Id` (`Gotra_Id`),
+  ADD KEY `Sutra_Id` (`Sutra_Id`),
+  ADD KEY `Panchang_Sudhi_Id` (`Panchang_Sudhi_Id`),
+  ADD KEY `Vamsha_Id` (`Vamsha_Id`),
+  ADD KEY `Mane_Devru_Id` (`Mane_Devru_Id`),
+  ADD KEY `Kula_Devatha_Id` (`Kula_Devatha_Id`),
+  ADD KEY `Pooja_Vruksha_Id` (`Pooja_Vruksha_Id`);
 
 --
 -- Indexes for table `pooja_vruksha`
@@ -261,67 +266,67 @@ ALTER TABLE `vamsha`
 -- AUTO_INCREMENT for table `family`
 --
 ALTER TABLE `family`
-  MODIFY `Family_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Family_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `family_relation`
 --
 ALTER TABLE `family_relation`
-  MODIFY `Relation_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Relation_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
 -- AUTO_INCREMENT for table `gothra`
 --
 ALTER TABLE `gothra`
-  MODIFY `Gotra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Gotra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `kula_devatha`
 --
 ALTER TABLE `kula_devatha`
-  MODIFY `Kula_Devatha_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Kula_Devatha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `mane_devru`
 --
 ALTER TABLE `mane_devru`
-  MODIFY `Mane_Devru_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Mane_Devru_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `panchang_sudhi`
 --
 ALTER TABLE `panchang_sudhi`
-  MODIFY `Panchang_Sudhi_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Panchang_Sudhi_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `person`
 --
 ALTER TABLE `person`
-  MODIFY `Person_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Person_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `pooja_vruksha`
 --
 ALTER TABLE `pooja_vruksha`
-  MODIFY `Pooja_Vruksha_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Pooja_Vruksha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `sutra`
 --
 ALTER TABLE `sutra`
-  MODIFY `Sutra_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Sutra_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `user_login`
 --
 ALTER TABLE `user_login`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `vamsha`
 --
 ALTER TABLE `vamsha`
-  MODIFY `Vamsha_Id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Vamsha_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables

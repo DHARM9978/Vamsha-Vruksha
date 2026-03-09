@@ -359,7 +359,8 @@ interactive family tree.
 
 <div class="hero-image">
 
-<img src="https://cdn-icons-png.flaticon.com/512/4475/4475010.png">
+<!-- <img src="https://cdn-icons-png.flaticon.com/512/4475/4475010.png"> -->
+<img src="">
 
 </div>
 

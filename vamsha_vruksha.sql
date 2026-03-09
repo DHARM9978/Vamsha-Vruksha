@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 05, 2026 at 06:09 AM
+-- Generation Time: Mar 09, 2026 at 11:26 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -325,7 +325,9 @@ INSERT INTO `user_login` (`user_id`, `user_name`, `user_email`, `user_phone_numb
 (1, 'Demo', 'demo@gmail.com', '1212121212', '$2y$10$atSKsFvoUqHepJC/R85v9ui8T7KVLLczveUMue9xnbbB5b2IeL8qy', 'User', '2026-03-04 16:18:34'),
 (2, 'Dharm', 'dharm@gmail.com', '1231231231', '$2y$10$uSuzxtSQNGN.G7jGC0YBsubbr4UliJrtadn3Oc9LAmbw/T8dw4nBO', 'User', '2026-03-04 17:53:06'),
 (4, 'Demo2', 'demo2@gmail.com', '1234123412', '$2y$10$.fuQag.qIi6UHiRghaEAkuI5iZTLkwQb0/FygL66mDiNYL6/WgIne', 'User', '2026-03-04 18:59:37'),
-(6, '', 'dharm2@gmail.com', '1234567890', '$2y$10$QTJZAj2EeuMgSDf2UBDgYe06N9FZ1griieiYqzUCuWGDSFaXQ33ce', 'User', '2026-03-05 05:06:31');
+(6, '', 'dharm2@gmail.com', '1234567890', '$2y$10$QTJZAj2EeuMgSDf2UBDgYe06N9FZ1griieiYqzUCuWGDSFaXQ33ce', 'User', '2026-03-05 05:06:31'),
+(7, 'Dharm Bhadani', 'dharm3@gmail.com', '1234512345', '$2y$10$71KDmS7iApSGu8XUL7XbdOI5jGrsm4pgvj4lx3xS4XAah3M2SZyka', 'Admin', '2026-03-05 05:14:03'),
+(10, 'Dharm', 'dharm9968@gmail.com', '1234567543', '$2y$10$HyTE5IKD9uBdJfYOSmu7eOjCkwfwMQ6wNxf71Pv.7fu27fspVMDb6', 'User', '2026-03-06 03:38:34');
 
 -- --------------------------------------------------------
 
@@ -492,7 +494,7 @@ ALTER TABLE `sutra`
 -- AUTO_INCREMENT for table `user_login`
 --
 ALTER TABLE `user_login`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `vamsha`
