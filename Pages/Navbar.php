@@ -159,7 +159,11 @@ session_start();
         <a href="./Add_Vamsha.php">Add Vamsha</a> <a href="./Add_Admin.php">Add Admin/User</a>
         <?php } else { ?>
         <!-- USER MENU --> <a href="./Family_Tree.php">Family Tree</a> <a href="./Family_Details.php">Family Details</a>
-        <?php } ?> <a href="./Logout.php" class="logout-btn">Logout</a>
+        <?php } ?> 
+        
+        
+        <a href="./Change_Password.php">Change Password</a>
+        <a href="./Logout.php" class="logout-btn">Logout</a>
     </div> <!-- OVERLAY -->
     <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
     <script>
