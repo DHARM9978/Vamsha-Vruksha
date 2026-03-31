@@ -150,15 +150,26 @@ session_start();
             </b>
         </div>
         <?php if($_SESSION['role'] == "Admin"){ ?>
-        <!-- ADMIN MENU --> <a href="./Add_Person.php">Add Person</a> <a href="./Create_Family.php">Create Family</a> <a
-            href="./Family_Tree.php">Family Tree</a> <a href="./Family_Details.php">Family Details</a> <a
-            href="./edit_person.php">Edit Person</a> <a href="./Add_Relation.php">Add Relation</a> <a
-            href="./Add_Gothara.php">Add Gothara</a> <a href="./Add_Sutra.php">Add Sutra</a> <a
-            href="./Add_Kula_Devatha.php">Add Kula Devatha</a> <a href="./Add_Mane_Devaru.php">Add Mane Devaru</a> <a
-            href="./Add_Panchang_Sudhi.php">Add Panchang Sudhi</a> <a href="./Add_Puja_Vruksha.php">Add Puja Vruksha</a>
+        <!-- ADMIN MENU --> 
+        <a href="./Add_Person.php">Add Person</a> 
+        <a href="./Create_Family.php">Create Family</a> 
+        <a href="./Edit_Family.php">Edit Family</a> 
+        <a href="./Add_Person.php">Add Person</a> 
+        <a href="./Family_Tree.php">Family Tree</a> 
+        <a href="./Family_Details.php">Family Details</a>
+        <a href="./edit_person.php">Edit Person</a> 
+        <a href="./Add_Relation.php">Add Relation</a> 
+        <a href="./Add_Gothara.php">Add Gothara</a> 
+        <a href="./Add_Sutra.php">Add Sutra</a>
+        <a href="./Add_Kula_Devatha.php">Add Kula Devatha</a> 
+        <a href="./Add_Mane_Devaru.php">Add Mane Devaru</a>
+        <a href="./Add_Panchang_Sudhi.php">Add Panchang Sudhi</a> 
+        <a href="./Add_Puja_Vruksha.php">Add Puja Vruksha</a>
         <a href="./Add_Vamsha.php">Add Vamsha</a> <a href="./Add_Admin.php">Add Admin/User</a>
         <?php } else { ?>
-        <!-- USER MENU --> <a href="./Family_Tree.php">Family Tree</a> <a href="./Family_Details.php">Family Details</a>
+        <!-- USER MENU --> 
+        <a href="./Family_Tree.php">Family Tree</a> 
+        <a href="./Family_Details.php">Family Details</a>
         <?php } ?> 
         
         

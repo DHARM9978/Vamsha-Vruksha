@@ -16,117 +16,176 @@ include "../indexNavbar.php";
 
 <style>
 
-/* GLOBAL */
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:"Segoe UI",sans-serif;
-}
 
+/* ===== GLOBAL ===== */
 body{
-background:linear-gradient(135deg,#e0f2fe,#dcfce7);
-min-height:100vh;
-overflow-x:hidden;
+    margin:0;
+    font-family:'Segoe UI',sans-serif;
+    background:linear-gradient(135deg,#e0f2fe,#ecfdf5);
+    overflow-x:hidden;
 }
 
-/* HERO */
+/* ===== HERO SECTION ===== */
 .hero{
-text-align:center;
-padding:60px 5% 30px;
+    text-align:center;
+    padding:clamp(40px,6vw,80px) 5%;
+    animation:fadeUp 0.6s ease;
 }
 
 .hero h1{
-font-size:clamp(28px,5vw,42px);
-margin-bottom:10px;
+    font-size:clamp(28px,5vw,44px);
+    margin-bottom:10px;
 }
 
 .hero p{
-font-size:clamp(14px,2vw,18px);
-color:#555;
+    font-size:clamp(14px,2vw,18px);
+    color:#555;
 }
 
-/* ABOUT SECTION */
+/* ===== ABOUT TEXT ===== */
 .about{
-max-width:1000px;
-margin:auto;
-padding:40px 5%;
-text-align:center;
+    max-width:1000px;
+    margin:auto;
+    padding:clamp(30px,5vw,60px) 5%;
+    text-align:center;
+    animation:fadeUp 0.7s ease;
 }
 
 .about p{
-font-size:16px;
-line-height:1.7;
-color:#555;
+    font-size:16px;
+    line-height:1.7;
+    color:#555;
 }
 
-/* CARDS */
+/* ===== CARDS SECTION ===== */
 .about-cards{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-gap:20px;
-margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:25px;
+    margin-top:40px;
 }
 
+/* CARD */
 .card{
-background:rgba(255,255,255,0.85);
-padding:25px;
-border-radius:18px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
-transition:0.3s;
-text-align:center;
+    background:rgba(255,255,255,0.9);
+    padding:25px;
+    border-radius:20px;
+    text-align:center;
+
+    backdrop-filter:blur(12px);
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+    transition:all 0.3s ease;
+
+    animation:fadeUp 0.6s ease;
 }
 
-.card:hover{
-transform:translateY(-6px);
-}
-
+/* ICON */
 .card i{
-font-size:32px;
-color:#2563eb;
-margin-bottom:10px;
+    font-size:32px;
+    color:#2563eb;
+    margin-bottom:10px;
 }
 
+/* TITLE */
 .card h3{
-margin-bottom:10px;
+    margin-bottom:10px;
 }
 
-/* MISSION SECTION */
+/* TEXT */
+.card p{
+    color:#555;
+    font-size:14px;
+}
+
+/* HOVER EFFECT */
+.card:hover{
+    transform:translateY(-8px) scale(1.03);
+    box-shadow:0 20px 45px rgba(0,0,0,0.15);
+}
+
+/* ===== MISSION SECTION ===== */
 .mission{
-padding:60px 5%;
-text-align:center;
+    padding:clamp(40px,6vw,70px) 5%;
+    text-align:center;
 }
 
+/* MISSION BOX */
 .mission-box{
-max-width:800px;
-margin:auto;
-background:white;
-padding:30px;
-border-radius:20px;
-box-shadow:0 10px 30px rgba(0,0,0,0.1);
+    max-width:800px;
+    margin:auto;
+    background:rgba(255,255,255,0.95);
+    padding:30px;
+    border-radius:20px;
+
+    backdrop-filter:blur(14px);
+    box-shadow:0 15px 40px rgba(0,0,0,0.1);
+
+    animation:fadeUp 0.8s ease;
 }
 
-/* FOOTER */
-.footer{
-background:#111;
-color:white;
-padding:30px;
-text-align:center;
-margin-top:40px;
+.mission-box h2{
+    margin-bottom:15px;
+    background:linear-gradient(90deg,#2563eb,#22c55e);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.mission-box p{
+    color:#555;
+    line-height:1.6;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:translateY(30px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* TABLET */
+@media(max-width:900px){
+
+    .about{
+        padding:30px 5%;
+    }
+
+    .mission-box{
+        padding:25px;
+    }
 }
 
 /* MOBILE */
 @media(max-width:600px){
 
-.about{
-padding:30px 5%;
+    .hero{
+        padding:40px 5%;
+    }
+
+    .hero h1{
+        font-size:24px;
+    }
+
+    .hero p{
+        font-size:14px;
+    }
+
+    .card{
+        padding:20px;
+    }
+
+    .mission-box{
+        padding:20px;
+    }
 }
 
-.mission-box{
-padding:20px;
-}
 
-}
 
 </style>
 

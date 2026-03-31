@@ -23,223 +23,249 @@ $users = $conn->query("SELECT COUNT(*) as total FROM user_login")->fetch_assoc()
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-    /* GLOBAL */
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Segoe UI", sans-serif;
-    }
-
+    /* ===== GLOBAL ===== */
     body {
-        background: linear-gradient(135deg, #e0f2fe, #dcfce7);
-        min-height: 100vh;
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #e0f2fe, #ecfdf5);
         overflow-x: hidden;
     }
 
-    /* HERO */
+    /* ===== HERO SECTION ===== */
     .hero {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 60px 8%;
+        padding: clamp(40px, 6vw, 80px) 8%;
         gap: 40px;
         flex-wrap: wrap;
+        /* prevents overflow */
     }
 
-    /* TEXT */
+    /* HERO TEXT */
     .hero-text {
         flex: 1;
         min-width: 280px;
-        max-width: 500px;
+        max-width: 550px;
+        animation: fadeLeft 0.8s ease;
     }
 
     .hero-text h1 {
-        font-size: clamp(28px, 4vw, 38px);
+        font-size: clamp(28px, 5vw, 48px);
         margin-bottom: 15px;
+        line-height: 1.2;
     }
 
     .hero-text p {
-        font-size: clamp(14px, 2vw, 16px);
+        font-size: clamp(14px, 2vw, 18px);
         color: #555;
-        margin-bottom: 20px;
         line-height: 1.6;
+        margin-bottom: 25px;
     }
 
     /* BUTTON */
-    .btn {
-        background: linear-gradient(135deg, #3b82f6, #22c55e);
-        color: white;
-        padding: 10px 22px;
-        border-radius: 30px;
-        text-decoration: none;
-        font-weight: 600;
+    .hero-btn {
         display: inline-block;
+        padding: 12px 26px;
+        border-radius: 30px;
+        background: linear-gradient(135deg, #2563eb, #22c55e);
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
         transition: 0.3s;
     }
 
-    .btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    .hero-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
     }
 
-    /* IMAGE */
+    /* HERO IMAGE */
     .hero-image {
         flex: 1;
         display: flex;
         justify-content: center;
-        position: relative;
-        min-width: 280px;
+        animation: fadeRight 0.8s ease;
     }
 
-    /* GLOW */
-    .hero-image::before {
-        content: "";
-        position: absolute;
-        width: clamp(300px, 40vw, 520px);
-        height: clamp(300px, 40vw, 520px);
-        background: radial-gradient(circle, rgba(34, 197, 94, 0.25), transparent 70%);
-        z-index: 0;
-    }
-
-    /* IMAGE */
     .hero-image img {
-        width: clamp(280px, 40vw, 460px);
-        max-width: 100%;
-        position: relative;
-        z-index: 1;
-        animation: float 4s ease-in-out infinite;
+        width: 100%;
+        max-width: 420px;
+        height: auto;
     }
 
-    /* STATS */
+    /* ===== STATS SECTION ===== */
     .stats {
-        padding: 50px 8%;
+        padding: clamp(40px, 6vw, 70px) 8%;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 25px;
     }
 
+    /* CARD */
     .card {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.9);
         padding: 25px;
         border-radius: 18px;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
         transition: 0.3s;
-    }
-
-    .card:hover {
-        transform: translateY(-6px) scale(1.02);
+        animation: fadeUp 0.6s ease;
     }
 
     .card i {
         font-size: 28px;
-        color: #2563eb;
         margin-bottom: 10px;
+        color: #2563eb;
     }
 
     .card h2 {
-        font-size: 26px;
+        margin: 10px 0;
     }
 
-    /* FEATURES */
+    .card:hover {
+        transform: translateY(-6px) scale(1.03);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ===== FEATURES ===== */
     .features {
-        padding: 60px 8%;
+        padding: clamp(40px, 6vw, 70px) 8%;
         text-align: center;
     }
 
+    .features h2 {
+        font-size: clamp(22px, 4vw, 32px);
+        margin-bottom: 20px;
+    }
+
+    /* GRID */
     .feature-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 20px;
-        margin-top: 30px;
+        gap: 25px;
     }
 
+    /* FEATURE CARD */
     .feature {
-        background: white;
+        background: rgba(255, 255, 255, 0.9);
         padding: 25px;
-        border-radius: 18px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border-radius: 20px;
+        backdrop-filter: blur(12px);
         transition: 0.3s;
-    }
-
-    .feature:hover {
-        transform: translateY(-5px);
+        animation: fadeUp 0.6s ease;
     }
 
     .feature i {
         font-size: 28px;
-        color: #2563eb;
+        color: #22c55e;
         margin-bottom: 10px;
     }
 
-    /* FOOTER */
+    .feature:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ===== FOOTER ===== */
     .footer {
+        margin-top: 40px;
         background: #111;
         color: white;
         padding: 30px;
         text-align: center;
-        margin-top: 40px;
+    }
+
+    .footer-links {
+        margin-top: 10px;
     }
 
     .footer-links a {
-        color: white;
+        color: #ccc;
         margin: 0 10px;
         text-decoration: none;
     }
 
-    /* ANIMATION */
-    @keyframes float {
-        0% {
-            transform: translateY(0)
+    .footer-links a:hover {
+        color: white;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-40px);
         }
 
-        50% {
-            transform: translateY(-12px)
-        }
-
-        100% {
-            transform: translateY(0)
+        to {
+            opacity: 1;
+            transform: translateX(0);
         }
     }
 
-    /* 🔥 TABLET */
-    @media(max-width:1024px) {
+    @keyframes fadeRight {
+        from {
+            opacity: 0;
+            transform: translateX(40px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== RESPONSIVE ===== */
+
+    /* TABLET */
+    @media(max-width:900px) {
+
         .hero {
             flex-direction: column;
             text-align: center;
         }
 
-        .hero-text {
-            max-width: 100%;
-        }
-
-        .hero-image {
-            margin-top: 20px;
+        .hero-image img {
+            max-width: 300px;
         }
     }
 
-    /* 🔥 MOBILE */
+    /* MOBILE */
     @media(max-width:600px) {
 
         .hero {
             padding: 40px 5%;
         }
 
-        .btn {
-            padding: 10px 18px;
+        .hero-text h1 {
+            font-size: 24px;
+        }
+
+        .hero-text p {
             font-size: 14px;
         }
 
-        .stats {
-            padding: 40px 5%;
+        .hero-btn {
+            padding: 10px 20px;
+            font-size: 14px;
         }
 
-        .features {
-            padding: 40px 5%;
+        .card {
+            padding: 20px;
         }
-
     }
     </style>
 
@@ -259,7 +285,7 @@ $users = $conn->query("SELECT COUNT(*) as total FROM user_login")->fetch_assoc()
                 interactive family tree.
             </p>
 
-            <a href="Pages/login.php" class="btn">Explore Family Tree</a>
+            <a href="Pages/login.php" class="hero-btn">Explore Family Tree</a>
         </div>
 
         <div class="hero-image">
