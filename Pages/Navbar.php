@@ -154,7 +154,6 @@ session_start();
         <a href="./Add_Person.php">Add Person</a> 
         <a href="./Create_Family.php">Create Family</a> 
         <a href="./Edit_Family.php">Edit Family</a> 
-        <a href="./Add_Person.php">Add Person</a> 
         <a href="./Family_Tree.php">Family Tree</a> 
         <a href="./Family_Details.php">Family Details</a>
         <a href="./edit_person.php">Edit Person</a> 
