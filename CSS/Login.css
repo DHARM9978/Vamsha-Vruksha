@@ -117,3 +117,22 @@ h1 {
     margin-bottom: 10px;
     color: red;
 }
+
+/* For Back button */
+.back-dashboard {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #3b82f6;
+    text-decoration: none;
+    margin-bottom: 15px;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+/* hover effect */
+.back-dashboard:hover {
+    color: #1d4ed8;
+    transform: translateX(-2px);
+}

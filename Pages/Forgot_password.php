@@ -198,6 +198,126 @@ $showReset = true;
         text-decoration: none;
     }
 
+    /* Password validation */
+    .validation-list {
+        margin-top: 10px;
+    }
+
+    .validation-list p {
+        display: flex;
+        align-items: center;
+        /* 🔥 vertical alignment fix */
+        gap: 10px;
+        font-size: 14px;
+        margin: 8px 0;
+        color: #ef4444;
+        line-height: 1;
+        /* 🔥 remove extra spacing */
+    }
+
+    /* ICON FIX */
+    .validation-list .icon {
+        min-width: 18px;
+        /* 🔥 keeps alignment fixed */
+        height: 18px;
+        border-radius: 50%;
+        background: #fee2e2;
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        flex-shrink: 0;
+        /* 🔥 prevents shrinking */
+    }
+
+    /* VALID STATE */
+    .validation-list p.valid {
+        color: #22c55e;
+        font-weight: 500;
+    }
+
+    .validation-list p.valid .icon {
+        background: #dcfce7;
+        color: #22c55e;
+    }
+
+    /* Toggle Eye Button */
+
+    /* INPUT GROUP */
+    .input-group {
+        margin-bottom: 18px;
+        text-align: left;
+    }
+
+    /* WRAPPER FOR INPUT + ICON */
+    .input-wrapper {
+        position: relative;
+    }
+
+    /* INPUT */
+    .input-wrapper input {
+        width: 100%;
+        padding: 14px 45px 14px 12px;
+        /* space for icon */
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    /* 🔥 PERFECT CENTERED ICON */
+    .toggle-password {
+        position: absolute;
+        top: 50%;
+        right: 12px;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #9ca3af;
+        font-size: 16px;
+    }
+
+    /* HOVER */
+    .toggle-password:hover {
+        color: #3b82f6;
+    }
+
+    .confirm-msg {
+        font-size: 12px;
+        margin-top: 5px;
+        color: #ef4444;
+        display: none;
+    }
+
+    .confirm-msg.valid {
+        color: #22c55e;
+        display: block;
+    }
+
+
+    /* Back to login button CSS */
+    .card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        padding: 35px;
+        border-radius: 20px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+
+
+    .back-top {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #3b82f6;
+        text-decoration: none;
+        margin-bottom: 15px;
+
+        /* 🔥 THIS LINE FIXES ALIGNMENT */
+        justify-content: flex-start;
+    }
+
+
     /* RESPONSIVE */
     @media(max-width:500px) {
         .card {
@@ -213,6 +333,13 @@ $showReset = true;
     <div class="container">
         <div class="card">
 
+
+            <!-- BACK BUTTON -->
+            <a href="login.php" class="back-top">
+                <i class="fa-solid fa-arrow-left"></i> Back to Login
+            </a>
+
+            <!-- ICON -->
             <div class="icon">
                 <i class="fa-solid fa-key"></i>
             </div>
@@ -225,7 +352,7 @@ $showReset = true;
             <div class="msg"><?php echo $message ?></div>
             <?php } ?>
 
-            <form method="POST">
+            <form method="POST" onsubmit="return checkForm()">
 
                 <?php if(!$showReset){ ?>
 
@@ -247,12 +374,36 @@ $showReset = true;
 
                 <div class="input-group">
                     <label>New Password</label>
-                    <input type="password" name="new_password" required>
+
+                    <div class="input-wrapper">
+                        <input type="password" id="new_password" name="new_password" onkeyup="validatePassword()"
+                            required>
+
+                        <i class="fa-regular fa-eye toggle-password" onclick="togglePassword('new_password', this)"></i>
+                    </div>
+
+                </div>
+
+                <div class="validation-list">
+                    <p id="length"><span class="icon">✖</span> Minimum 8 characters</p>
+                    <p id="uppercase"><span class="icon">✖</span> 1 uppercase letter</p>
+                    <p id="number"><span class="icon">✖</span> 1 number</p>
+                    <p id="special"><span class="icon">✖</span> 1 special character</p>
                 </div>
 
                 <div class="input-group">
                     <label>Confirm Password</label>
-                    <input type="password" name="confirm_password" required>
+
+                    <div class="input-wrapper">
+                        <input type="password" id="confirm_password" name="confirm_password"
+                            onkeyup="validateConfirmPassword()" required>
+
+                        <i class="fa-regular fa-eye toggle-password"
+                            onclick="togglePassword('confirm_password', this)"></i>
+
+                        <div id="confirmMsg" class="confirm-msg"></div>
+                    </div>
+
                 </div>
 
                 <button type="submit" name="resetPassword" class="btn">Reset Password</button>
@@ -261,13 +412,89 @@ $showReset = true;
 
             </form>
 
-            <div class="links">
-                <p><a href="login.php">← Back to Login</a></p>
-            </div>
-
         </div>
     </div>
 
 </body>
+
+<script>
+icon.textContent = "✔"; // valid
+icon.textContent = "✖"; // invalid  
+
+
+// Toggle Function for password visibility
+function togglePassword(id, icon) {
+    let input = document.getElementById(id);
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+    }
+}
+
+
+
+
+/* 🔥 PASSWORD VALIDATION */
+function validatePassword() {
+
+    let password = document.getElementById("new_password").value;
+
+    let rules = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[!@#$%^&*]/.test(password)
+    };
+
+    for (let key in rules) {
+
+        let element = document.getElementById(key);
+        let icon = element.querySelector(".icon");
+
+        if (rules[key]) {
+            element.classList.add("valid");
+            icon.textContent = "✔";
+        } else {
+            element.classList.remove("valid");
+            icon.textContent = "✖";
+        }
+    }
+}
+
+function validateConfirmPassword() {
+
+    let password = document.getElementById("new_password").value;
+    let confirm = document.getElementById("confirm_password").value;
+    let msg = document.getElementById("confirmMsg");
+
+    /* if empty → hide */
+    if (confirm === "") {
+        msg.style.display = "none";
+        return;
+    }
+
+    /* MATCH */
+    if (password === confirm) {
+        msg.textContent = "✔ Passwords match";
+        msg.classList.add("valid");
+        msg.style.display = "block";
+
+        document.getElementById("confirm_password").style.borderColor = "#22c55e";
+    } else {
+        msg.textContent = "✖ Passwords do not match";
+        msg.classList.remove("valid");
+        msg.style.display = "block";
+
+        document.getElementById("confirm_password").style.borderColor = "#ef4444";
+    }
+}
+</script>
+
+
+
 
 </html>

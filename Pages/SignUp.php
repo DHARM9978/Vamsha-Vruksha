@@ -100,6 +100,10 @@ if(isset($_POST['signup'])){
 
     <div class="signup-card">
 
+       <a href="../index.php" class="back-dashboard">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+
         <div class="icon-circle">
             <i class="fa-solid fa-user-plus"></i>
         </div>
