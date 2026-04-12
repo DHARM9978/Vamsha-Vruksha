@@ -25,12 +25,12 @@ try {
     $mail->isSMTP();
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
-    $mail->Username = 'mcabu08@dscasc.edu.in'; // ⚠️ CHANGE
-    $mail->Password = 'snqe dwgj tacr qbpf';        // ⚠️ CHANGE
+    $mail->Username =; // ⚠️ CHANGE
+    $mail->Password = ;        // ⚠️ CHANGE
     $mail->SMTPSecure = 'tls';
     $mail->Port = 587;
 
-    $mail->setFrom('mcabu08@dscasc.edu.in','Vamsha Vruksha');
+    $mail->setFrom('','Vamsha Vruksha');
     $mail->addAddress($email);
 
     $mail->Subject = "OTP Verification";
