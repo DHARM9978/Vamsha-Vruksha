@@ -93,10 +93,15 @@ $message="Invalid User ID or Password.";
                 <div class="error">Password required</div>
             </div>
 
+             <div>
+            <a href="Forgot_password.php" class="forgot-link">Forgot Password?</a>
+            </div>
+
+        <br>
             <button type="submit" name="login" class="btn">Login</button>
 
         </form>
-
+       
         <div class="signup-text">
             Don't have an account? <a href="signup.php">Sign Up</a>
         </div>
