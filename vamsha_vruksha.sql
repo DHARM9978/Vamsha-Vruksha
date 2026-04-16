@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 09, 2026 at 11:26 AM
+-- Generation Time: Apr 16, 2026 at 08:04 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -174,6 +174,28 @@ INSERT INTO `mane_devru` (`Mane_Devru_Id`, `Mane_Devru_Name`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `otp_verification`
+--
+
+CREATE TABLE `otp_verification` (
+  `id` int(11) NOT NULL,
+  `user_email` varchar(150) DEFAULT NULL,
+  `otp` varchar(6) DEFAULT NULL,
+  `purpose` varchar(50) DEFAULT NULL,
+  `expires_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `otp_verification`
+--
+
+INSERT INTO `otp_verification` (`id`, `user_email`, `otp`, `purpose`, `expires_at`, `created_at`) VALUES
+(42, 'bhadanidharm68@gmail.com', '509640', 'forgot', '2026-04-12 17:48:57', '2026-04-12 15:43:57');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `panchang_sudhi`
 --
 
@@ -224,7 +246,7 @@ CREATE TABLE `person` (
 --
 
 INSERT INTO `person` (`Person_Id`, `Family_Id`, `First_Name`, `Last_Name`, `father_name`, `mother_name`, `Gender`, `DOB`, `Phone_Number`, `Mobile_Number`, `Email`, `Original_Native`, `Current_Address`, `Gotra_Id`, `Sutra_Id`, `Panchang_Sudhi_Id`, `Vamsha_Id`, `Mane_Devru_Id`, `Kula_Devatha_Id`, `Pooja_Vruksha_Id`) VALUES
-(2, 3, 'Kantibhai', 'Bhadani', 'TalashiBhai', 'Kuvarben', 'Male', '1999-01-01', '1212121212', '1212121212', 'kantibhai@gmail.com', 'shahpur', '0', 4, 1, 2, 2, 1, 1, 2),
+(2, 3, 'Kantibhai', 'Bhadani', 'TalashiBhai', 'Kuvarben', 'Male', '1999-01-01', '1212121212', '1212121212', 'kantibhai@gmail.com', 'shahpur', 'surat ', 4, 1, 2, 2, 1, 1, 2),
 (3, 3, 'ramaben', 'bhadani', NULL, NULL, 'Female', '1999-01-01', '1212121212', '1212121212', 'reamben@gmail.com', 'Navda', '0', 3, 2, 1, 1, 2, 2, 1),
 (4, 3, 'Bhaveshbhai', 'Bhadani', 'Kantibhai', 'Ramaben', 'Male', '2000-01-01', '1212121212', '1212121212', 'bhavesh@gmail.com', 'Shahpur', '0', 4, 1, 2, 2, 1, 1, 2),
 (6, 4, 'Khimajibhai', 'donda', NULL, NULL, 'Male', '1999-01-01', '1212121212', '1212121212', 'khijamjibhai@gmail.com', 'nari', '0', 3, 2, 1, 1, 2, 2, 1),
@@ -314,20 +336,18 @@ CREATE TABLE `user_login` (
   `user_phone_number` varchar(15) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `role` enum('Admin','User') DEFAULT 'User',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_verified` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_login`
 --
 
-INSERT INTO `user_login` (`user_id`, `user_name`, `user_email`, `user_phone_number`, `password`, `role`, `created_at`) VALUES
-(1, 'Demo', 'demo@gmail.com', '1212121212', '$2y$10$atSKsFvoUqHepJC/R85v9ui8T7KVLLczveUMue9xnbbB5b2IeL8qy', 'User', '2026-03-04 16:18:34'),
-(2, 'Dharm', 'dharm@gmail.com', '1231231231', '$2y$10$uSuzxtSQNGN.G7jGC0YBsubbr4UliJrtadn3Oc9LAmbw/T8dw4nBO', 'User', '2026-03-04 17:53:06'),
-(4, 'Demo2', 'demo2@gmail.com', '1234123412', '$2y$10$.fuQag.qIi6UHiRghaEAkuI5iZTLkwQb0/FygL66mDiNYL6/WgIne', 'User', '2026-03-04 18:59:37'),
-(6, '', 'dharm2@gmail.com', '1234567890', '$2y$10$QTJZAj2EeuMgSDf2UBDgYe06N9FZ1griieiYqzUCuWGDSFaXQ33ce', 'User', '2026-03-05 05:06:31'),
-(7, 'Dharm Bhadani', 'dharm3@gmail.com', '1234512345', '$2y$10$71KDmS7iApSGu8XUL7XbdOI5jGrsm4pgvj4lx3xS4XAah3M2SZyka', 'Admin', '2026-03-05 05:14:03'),
-(10, 'Dharm', 'dharm9968@gmail.com', '1234567543', '$2y$10$HyTE5IKD9uBdJfYOSmu7eOjCkwfwMQ6wNxf71Pv.7fu27fspVMDb6', 'User', '2026-03-06 03:38:34');
+INSERT INTO `user_login` (`user_id`, `user_name`, `user_email`, `user_phone_number`, `password`, `role`, `created_at`, `is_verified`) VALUES
+(11, 'Dharm Bhadani user', 'dharm@gmail.com', '1231231231', '$2y$10$D0yniXujWivYerW68pl0GOxSZ2buxdh5INCiP2rfxuM7Npa4lDeQW', 'User', '2026-03-18 10:18:03', 0),
+(12, 'Dharm Bhadani Admin', 'demo@gmail.com', '1234567890', '$2y$10$seV2IZl8ckzeLjSuElLpjelo9QID8cgC7FIU1uR8xXX1g2GNSZmgu', 'Admin', '2026-03-18 10:21:14', 0),
+(27, 'Dharm Bhadani', 'bhadanidharm68@gmail.com', '3456754323', '$2y$10$bAewBLOXwwNVkQBwPRROf.7bKKZ6VrBzstkKHcFI/ZmMxHvvJkXz2', 'User', '2026-04-12 13:01:04', 1);
 
 -- --------------------------------------------------------
 
@@ -385,6 +405,13 @@ ALTER TABLE `kula_devatha`
 --
 ALTER TABLE `mane_devru`
   ADD PRIMARY KEY (`Mane_Devru_Id`);
+
+--
+-- Indexes for table `otp_verification`
+--
+ALTER TABLE `otp_verification`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_email` (`user_email`);
 
 --
 -- Indexes for table `panchang_sudhi`
@@ -467,6 +494,12 @@ ALTER TABLE `mane_devru`
   MODIFY `Mane_Devru_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT for table `otp_verification`
+--
+ALTER TABLE `otp_verification`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+
+--
 -- AUTO_INCREMENT for table `panchang_sudhi`
 --
 ALTER TABLE `panchang_sudhi`
@@ -494,7 +527,7 @@ ALTER TABLE `sutra`
 -- AUTO_INCREMENT for table `user_login`
 --
 ALTER TABLE `user_login`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `vamsha`
@@ -518,6 +551,12 @@ ALTER TABLE `family`
 ALTER TABLE `family_relation`
   ADD CONSTRAINT `family_relation_ibfk_1` FOREIGN KEY (`Person_Id`) REFERENCES `person` (`Person_Id`),
   ADD CONSTRAINT `family_relation_ibfk_2` FOREIGN KEY (`Related_Person_Id`) REFERENCES `person` (`Person_Id`);
+
+--
+-- Constraints for table `otp_verification`
+--
+ALTER TABLE `otp_verification`
+  ADD CONSTRAINT `fk_user_email` FOREIGN KEY (`user_email`) REFERENCES `user_login` (`user_email`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `person`

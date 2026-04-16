@@ -172,6 +172,7 @@ session_start();
         <?php } ?> 
         
         
+        <a href="./profile.php">Profile</a>
         <a href="./Change_Password.php">Change Password</a>
         <a href="./Logout.php" class="logout-btn">Logout</a>
     </div> <!-- OVERLAY -->
