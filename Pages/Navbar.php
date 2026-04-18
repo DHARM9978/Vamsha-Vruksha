@@ -201,8 +201,6 @@ if(session_status() === PHP_SESSION_NONE){
             <div class="dropdown-content">
                 <a href="./Create_Family.php">Create Family</a>
                 <a href="./Edit_Family.php">Edit Family</a>
-                <a href="./Family_Details.php">Family Details</a>
-                <a href="./Family_Tree.php">Family Tree</a>
             </div>
         </div>
 
@@ -240,6 +238,12 @@ if(session_status() === PHP_SESSION_NONE){
         </div>
 
         <hr style="margin:1px 0;">
+        <a href="./Family_Tree.php">Family Tree</a>
+
+        <hr style="margin:1px 0;">
+        <a href="./Family_Details.php">Family Details</a>
+
+        <hr style="margin:1px 0;">
 
         <a href="./Add_Admin.php">Add Admin/User</a>
 
@@ -252,12 +256,6 @@ if(session_status() === PHP_SESSION_NONE){
 
         <?php } ?>
 
-           <hr style="margin:1px 0;">
-        <a href="./Family_Details.php">Family Details</a>
-
-        <hr style="margin:1px 0;">
-
-        <a href="./Family_Tree.php">Family Tree</a>
 
         <hr style="margin:1px 0;">
 
