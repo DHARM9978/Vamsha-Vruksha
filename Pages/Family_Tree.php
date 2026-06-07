@@ -3,6 +3,10 @@ include "auth_check.php";
 include "conn.php";
 require "Navbar.php";
 
+echo "<pre>";
+print_r($_GET);
+echo "</pre>";
+
 
 /* =========================================================
    SUPPORT BOTH ?id= AND ?family=
@@ -11,7 +15,9 @@ require "Navbar.php";
 $selectedPerson = null;
 
 if(isset($_GET['id']) && is_numeric($_GET['id'])){
+    // echo "<h1>Family ID = ".$fid."</h1>";
     $selectedPerson = intval($_GET['id']);
+    // echo "<h1>Selected Person = ".$selectedPerson."</h1>";
 }
 
 if(isset($_GET['family']) && is_numeric($_GET['family'])){
@@ -198,6 +204,9 @@ if($selectedPerson){
 <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 <script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
 <script src="https://unpkg.com/cytoscape-dagre/cytoscape-dagre.js"></script>
+<script>
+cytoscape.use(cytoscapeDagre);
+</script>
 
 <script>
 const nodes = <?= json_encode($nodes) ?>;
@@ -285,12 +294,10 @@ const cy = cytoscape({
 
     ],
     layout: {
-        name: 'dagre',
-        rankDir: 'TB',
-        nodeSep: 90,
-        rankSep: 140,
-        animate: true
-    }
+    name: 'breadthfirst',
+    directed: true,
+    spacingFactor: 2
+}
 });
 </script>
 <?php endif; ?>
