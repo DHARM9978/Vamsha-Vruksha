@@ -115,250 +115,245 @@ exit();
 
 <head>
 
-<meta charset="UTF-8">
-<title>Add Admin/User</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Add Admin/User</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<style>
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+    }
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:"Segoe UI",sans-serif;
-}
+    body {
+        min-height: 100vh;
+        margin-top: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #e0f2fe, #dcfce7);
+        padding: 20px;
+    }
 
-body{
-min-height:100vh;
-margin-top:30px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:linear-gradient(135deg,#e0f2fe,#dcfce7);
-padding:20px;
-}
+    .card {
+        width: 100%;
+        max-width: 420px;
+        background: white;
+        border-radius: 18px;
+        padding: 35px 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
 
-.card{
-width:100%;
-max-width:420px;
-background:white;
-border-radius:18px;
-padding:35px 30px;
-box-shadow:0 10px 30px rgba(0,0,0,0.08);
-}
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        background: #e0f2fe;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
 
-.icon-circle{
-width:60px;
-height:60px;
-background:#e0f2fe;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-margin:0 auto 20px;
-}
+    .icon-circle i {
+        color: #2563eb;
+        font-size: 22px;
+    }
 
-.icon-circle i{
-color:#2563eb;
-font-size:22px;
-}
+    h1 {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
 
-h1{
-text-align:center;
-font-size:24px;
-margin-bottom:5px;
-}
+    .subtitle {
+        text-align: center;
+        color: #6b7280;
+        margin-bottom: 20px;
+    }
 
-.subtitle{
-text-align:center;
-color:#6b7280;
-margin-bottom:20px;
-}
+    .form-group {
+        position: relative;
+        margin-bottom: 18px;
+    }
 
-.form-group{
-position:relative;
-margin-bottom:18px;
-}
+    .left-icon {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
 
-.left-icon{
-position:absolute;
-top:50%;
-left:14px;
-transform:translateY(-50%);
-color:#9ca3af;
-}
+    .form-group input {
+        width: 100%;
+        padding: 14px 45px 14px 42px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        outline: none;
+    }
 
-.form-group input{
-width:100%;
-padding:14px 45px 14px 42px;
-border-radius:10px;
-border:1px solid #e5e7eb;
-outline:none;
-}
+    .error {
+        font-size: 12px;
+        color: #ef4444;
+        display: none;
+        margin-top: 4px;
+    }
 
-.error{
-font-size:12px;
-color:#ef4444;
-display:none;
-margin-top:4px;
-}
+    .form-group.invalid input {
+        border-color: #ef4444;
+    }
 
-.form-group.invalid input{
-border-color:#ef4444;
-}
+    .role-toggle {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
 
-.role-toggle{
-display:flex;
-justify-content:center;
-margin:20px 0;
-}
+    .role-toggle label {
+        margin: 0 10px;
+        cursor: pointer;
+    }
 
-.role-toggle label{
-margin:0 10px;
-cursor:pointer;
-}
+    .btn {
+        width: 100%;
+        background: linear-gradient(135deg, #3b82f6, #22c55e);
+        border: none;
+        color: white;
+        padding: 14px;
+        border-radius: 12px;
+        cursor: pointer;
+    }
 
-.btn{
-width:100%;
-background:linear-gradient(135deg,#3b82f6,#22c55e);
-border:none;
-color:white;
-padding:14px;
-border-radius:12px;
-cursor:pointer;
-}
-
-.msg{
-text-align:center;
-margin-bottom:15px;
-color:#2563eb;
-font-weight:600;
-}
-
-</style>
+    .msg {
+        text-align: center;
+        margin-bottom: 15px;
+        color: #2563eb;
+        font-weight: 600;
+    }
+    </style>
 
 </head>
 
 <body>
 
-<div class="card">
+    <div class="card">
 
-<div class="icon-circle">
-<i class="fa-solid fa-user-plus"></i>
-</div>
+        <div class="icon-circle">
+            <i class="fa-solid fa-user-plus"></i>
+        </div>
 
-<h1>Add Admin/User</h1>
-<p class="subtitle">Create Admin or User Account</p>
+        <h1>Add Admin/User</h1>
+        <p class="subtitle">Create Admin or User Account</p>
 
-<?php showFlash(); ?>
+        <?php showFlash(); ?>
 
-<form method="POST" id="addUserForm">
+        <form method="POST" id="addUserForm">
 
-<div class="form-group">
-<i class="fa-solid fa-user left-icon"></i>
-<input type="text" id="name" name="name" placeholder="Full Name" required>
-<div class="error">Minimum 2 characters required</div>
-</div>
+            <div class="form-group">
+                <i class="fa-solid fa-user left-icon"></i>
+                <input type="text" id="name" name="name" placeholder="Full Name" required>
+                <div class="error">Minimum 2 characters required</div>
+            </div>
 
-<div class="form-group">
-<i class="fa-regular fa-envelope left-icon"></i>
-<input type="email" id="email" name="email" placeholder="Email Address" required>
-<div class="error">Enter valid email</div>
-</div>
+            <div class="form-group">
+                <i class="fa-regular fa-envelope left-icon"></i>
+                <input type="email" id="email" name="email" placeholder="Email Address" required>
+                <div class="error">Enter valid email</div>
+            </div>
 
-<div class="form-group">
-<i class="fa-solid fa-mobile-screen left-icon"></i>
-<input type="text" id="mobile" name="mobile" placeholder="Mobile Number" maxlength="10" required>
-<div class="error">Enter valid 10 digit number</div>
-</div>
+            <div class="form-group">
+                <i class="fa-solid fa-mobile-screen left-icon"></i>
+                <input type="text" id="mobile" name="mobile" placeholder="Mobile Number" maxlength="10" required>
+                <div class="error">Enter valid 10 digit number</div>
+            </div>
 
-<div class="form-group">
-<i class="fa-solid fa-lock left-icon"></i>
-<input type="password" id="password" name="password" placeholder="Password" required>
-<div class="error">Password must contain uppercase & number</div>
-</div>
+            <div class="form-group">
+                <i class="fa-solid fa-lock left-icon"></i>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+                <div class="error">Password must contain uppercase & number</div>
+            </div>
 
-<div class="role-toggle">
+            <div class="role-toggle">
 
-<label>
-<input type="radio" name="role" value="User" checked>
-User
-</label>
+                <label>
+                    <input type="radio" name="role" value="User" checked>
+                    User
+                </label>
 
-<label>
-<input type="radio" name="role" value="Admin">
-Admin
-</label>
+                <label>
+                    <input type="radio" name="role" value="Admin">
+                    Admin
+                </label>
 
-</div>
+            </div>
 
-<button type="submit" name="create_user" class="btn">
-Create Account
-</button>
+            <button type="submit" name="create_user" class="btn">
+                Create Account
+            </button>
 
-</form>
+        </form>
 
-</div>
+    </div>
 
-<script>
+    <script>
+    function validate(id, rule) {
 
-function validate(id,rule){
+        const input = document.getElementById(id);
+        const group = input.parentElement;
+        const error = group.querySelector(".error");
 
-const input=document.getElementById(id);
-const group=input.parentElement;
-const error=group.querySelector(".error");
+        if (!rule(input.value.trim())) {
+            group.classList.add("invalid");
+            error.style.display = "block";
+            return false;
+        } else {
+            group.classList.remove("invalid");
+            error.style.display = "none";
+            return true;
+        }
 
-if(!rule(input.value.trim())){
-group.classList.add("invalid");
-error.style.display="block";
-return false;
-}else{
-group.classList.remove("invalid");
-error.style.display="none";
-return true;
-}
+    }
 
-}
+    function validateName() {
+        return validate("name", v => v.length >= 2);
+    }
 
-function validateName(){
-return validate("name",v=>v.length>=2);
-}
+    function validateEmail() {
+        return validate("email", v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+    }
 
-function validateEmail(){
-return validate("email",v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
-}
+    function validateMobile() {
 
-function validateMobile(){
+        const input = document.getElementById("mobile");
+        input.value = input.value.replace(/[^0-9]/g, "");
 
-const input=document.getElementById("mobile");
-input.value=input.value.replace(/[^0-9]/g,"");
+        return validate("mobile", v => /^[0-9]{10}$/.test(v));
 
-return validate("mobile",v=>/^[0-9]{10}$/.test(v));
+    }
 
-}
+    function validatePassword() {
+        return validate("password", v => /^(?=.*[A-Z])(?=.*\d).{8,}$/.test(v));
+    }
 
-function validatePassword(){
-return validate("password",v=>/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(v));
-}
+    document.getElementById("addUserForm").addEventListener("submit", function(e) {
 
-document.getElementById("addUserForm").addEventListener("submit",function(e){
+        if (
+            !validateName() ||
+            !validateEmail() ||
+            !validateMobile() ||
+            !validatePassword()
+        ) {
+            e.preventDefault();
+        }
 
-if(
-!validateName() ||
-!validateEmail() ||
-!validateMobile() ||
-!validatePassword()
-){
-e.preventDefault();
-}
-
-});
-
-</script>
+    });
+    </script>
 
 </body>
-</html>
 
+</html>

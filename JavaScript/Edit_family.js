@@ -1,5 +1,4 @@
 const API = "../PHP/Update_family.php";
-console.log("JS LOADED");
 
 /* 🔍 LIVE SEARCH */
 document.getElementById("search").addEventListener("input", function(){
