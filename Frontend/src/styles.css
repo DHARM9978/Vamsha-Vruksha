@@ -1,0 +1,184 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Vamsha Vruksha design system — restrained botanical palette.
+ * Light: warm botanical ivory surfaces, forest-green primary, heritage gold accents.
+ * Dark: deep warm forest, sage primary, soft gold.
+ * All colors are the exact product tokens specified for Vamsha Vruksha.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-raised: var(--raised);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-sage: var(--sage);
+  --color-gold: var(--gold);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --shadow-soft: 0 1px 2px rgb(32 43 38 / 0.05), 0 6px 20px -12px rgb(32 43 38 / 0.14);
+  --shadow-card: 0 1px 2px rgb(32 43 38 / 0.06), 0 12px 32px -16px rgb(32 43 38 / 0.18);
+  --shadow-pop: 0 16px 40px -12px rgb(32 43 38 / 0.24);
+}
+
+:root {
+  --radius: 0.875rem;
+  --background: #f6f7f2;
+  --foreground: #202b26;
+  --card: #ffffff;
+  --card-foreground: #202b26;
+  --popover: #ffffff;
+  --popover-foreground: #202b26;
+  --primary: #285c4d;
+  --primary-foreground: #f8faf8;
+  --primary-hover: #1f493d;
+  --secondary: #eef3ec;
+  --secondary-foreground: #285c4d;
+  --muted: #eef3ec;
+  --muted-foreground: #67756d;
+  --accent: #eef3ec;
+  --accent-foreground: #285c4d;
+  --raised: #eef3ec;
+  --destructive: #b34a39;
+  --destructive-foreground: #fdf6f5;
+  --success: #3e7c4f;
+  --warning: #b07c2a;
+  --info: #46647a;
+  --sage: #8fb6a0;
+  --gold: #c79a4a;
+  --border: #e1e7df;
+  --input: #dde4dc;
+  --ring: #285c4d66;
+}
+
+.dark {
+  --background: #111916;
+  --foreground: #ecf2ed;
+  --card: #1a2420;
+  --card-foreground: #ecf2ed;
+  --popover: #1a2420;
+  --popover-foreground: #ecf2ed;
+  --primary: #8fc5a3;
+  --primary-foreground: #14211b;
+  --primary-hover: #a3d4b4;
+  --secondary: #23312b;
+  --secondary-foreground: #ecf2ed;
+  --muted: #23312b;
+  --muted-foreground: #a3b1a8;
+  --accent: #23312b;
+  --accent-foreground: #ecf2ed;
+  --raised: #23312b;
+  --destructive: #e08773;
+  --destructive-foreground: #231311;
+  --success: #7fbf8e;
+  --warning: #d9b36c;
+  --info: #9fb6c4;
+  --sage: #8fc5a3;
+  --gold: #d9b36c;
+  --border: #304038;
+  --input: #304038;
+  --ring: #8fc5a366;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-sage) 40%, transparent);
+  }
+}
+
+/* Themed family-tree graph chrome */
+.vv-canvas {
+  background:
+    radial-gradient(circle at 20% 10%, color-mix(in oklab, var(--color-sage) 10%, transparent), transparent 55%),
+    color-mix(in oklab, var(--color-card) 92%, var(--color-sage) 8%);
+}
+
+.vv-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent) transparent;
+}
+
+/* Print: export Family Details via the browser's Save-as-PDF */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #vv-printable,
+  #vv-printable * {
+    visibility: visible;
+  }
+
+  #vv-printable {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: #fff;
+    color: #202b26;
+  }
+}
+
+/* Reduced motion: everything settles immediately */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
