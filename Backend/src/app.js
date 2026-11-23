@@ -16,6 +16,7 @@ const logger = require("./utils/logger");
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
 const userRoutes = require("./routes/user.routes");
+const myFamilyRoutes = require("./routes/myFamily.routes");
 const familyRoutes = require("./routes/family.routes");
 const personRoutes = require("./routes/person.routes");
 const relationRoutes = require("./routes/relation.routes");
@@ -117,61 +118,67 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 
 // ==========================================
-// 10. FAMILY ROUTES
+// 10. AUTHENTICATED USER FAMILY ROUTES
+// ==========================================
+
+app.use("/api/my-family", myFamilyRoutes);
+
+// ==========================================
+// 11. FAMILY ROUTES
 // ==========================================
 
 app.use("/api/families", familyRoutes);
 
 // ==========================================
-// 11. PERSON ROUTES
+// 12. PERSON ROUTES
 // ==========================================
 
 app.use("/api", personRoutes);
 
 // ==========================================
-// 12. RELATIONSHIP ROUTES
+// 13. RELATIONSHIP ROUTES
 // ==========================================
 
 app.use("/api", relationRoutes);
 
 // ==========================================
-// 13. FAMILY TREE ROUTES
+// 14. FAMILY TREE ROUTES
 // ==========================================
 
 app.use("/api", familyTreeRoutes);
 
 // ==========================================
-// 14. FAMILY DETAILS ROUTES
+// 15. FAMILY DETAILS ROUTES
 // ==========================================
 
 app.use("/api", familyDetailsRoutes);
 
 // ==========================================
-// 15. MASTER DATA ROUTES
+// 16. MASTER DATA ROUTES
 // ==========================================
 
 app.use("/api/masters", masterDataRoutes);
 
 // ==========================================
-// 16. OVERVIEW ROUTES
+// 17. OVERVIEW ROUTES
 // ==========================================
 
 app.use("/api/overview", overviewRoutes);
 
 // ==========================================
-// 17. SEARCH ROUTES
+// 18. SEARCH ROUTES
 // ==========================================
 
 app.use("/api/search", searchRoutes);
 
 // ==========================================
-// 18. NOT FOUND HANDLER
+// 19. NOT FOUND HANDLER
 // ==========================================
 
 app.use(notFound);
 
 // ==========================================
-// 19. GLOBAL ERROR HANDLER
+// 20. GLOBAL ERROR HANDLER
 // ==========================================
 
 app.use(errorHandler);
