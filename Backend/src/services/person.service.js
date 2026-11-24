@@ -1,4 +1,3 @@
-
 const db = require("../config/db");
 
 // ==========================================
@@ -362,39 +361,109 @@ const validateMasterReferences = async (
 };
 
 // ==========================================
-// 1. GET PERSON BY ID
+// PERSON READ ACCESS HELPERS
 // ==========================================
 
-const getPersonById = async (personId) => {
-  const id = parsePositiveId(
-    personId,
-    "personId"
+const normalizePersonAccess = (accessContext) => {
+  if (!accessContext || typeof accessContext !== "object") {
+    throw createError(
+      "Person access context is required for person reads.",
+      500
+    );
+  }
+
+  if (accessContext.role === "Admin" && accessContext.isGlobal === true) {
+    return {
+      isGlobal: true,
+      personIds: null,
+      familyIds: null,
+    };
+  }
+
+  if (accessContext.role !== "User" || accessContext.isGlobal === true) {
+    throw createError(
+      "A valid family access context is required.",
+      403
+    );
+  }
+
+  const personIds = [
+    ...new Set(
+      (Array.isArray(accessContext.extendedPersonIds)
+        ? accessContext.extendedPersonIds
+        : [])
+        .map(Number)
+        .filter((id) => Number.isSafeInteger(id) && id > 0)
+    ),
+  ];
+
+  const familyIds = [
+    ...new Set(
+      (Array.isArray(accessContext.familyIds)
+        ? accessContext.familyIds
+        : [])
+        .map(Number)
+        .filter((id) => Number.isSafeInteger(id) && id > 0)
+    ),
+  ];
+
+  return {
+    isGlobal: false,
+    personIds,
+    familyIds,
+  };
+};
+
+const createPlaceholders = (count) =>
+  Array.from({ length: count }, () => "?").join(",");
+
+const PERSON_READ_BATCH_SIZE = 400;
+
+const getPersonSelectColumns = (includePrivate) => {
+  const columns = [
+    "Person_Id AS personId",
+    "Family_Id AS familyId",
+    "First_Name AS firstName",
+    "Last_Name AS lastName",
+    "father_name AS fatherName",
+    "mother_name AS motherName",
+    "Gender AS gender",
+    "DOB AS dob",
+  ];
+
+  if (includePrivate) {
+    columns.push(
+      "Phone_Number AS phoneNumber",
+      "Mobile_Number AS mobileNumber",
+      "Email AS email",
+      "Current_Address AS currentAddress"
+    );
+  }
+
+  columns.push(
+    "Original_Native AS originalNative",
+    "Gotra_Id AS gotraId",
+    "Sutra_Id AS sutraId",
+    "Panchang_Sudhi_Id AS panchangSudhiId",
+    "Vamsha_Id AS vamshaId",
+    "Mane_Devru_Id AS maneDevruId",
+    "Kula_Devatha_Id AS kulaDevathaId",
+    "Pooja_Vruksha_Id AS poojaVrukshaId"
   );
+
+  return columns.join(",\n       ");
+};
+
+// Internal read used after Admin-only create/update operations.
+// It is deliberately not exposed directly to ordinary User requests.
+const getPersonByIdInternal = async (personId, includePrivate) => {
+  const id = parsePositiveId(personId, "personId");
 
   const [rows] = await db.execute(
     `SELECT
-       p.Person_Id AS personId,
-       p.Family_Id AS familyId,
-       p.First_Name AS firstName,
-       p.Last_Name AS lastName,
-       p.father_name AS fatherName,
-       p.mother_name AS motherName,
-       p.Gender AS gender,
-       p.DOB AS dob,
-       p.Phone_Number AS phoneNumber,
-       p.Mobile_Number AS mobileNumber,
-       p.Email AS email,
-       p.Original_Native AS originalNative,
-       p.Current_Address AS currentAddress,
-       p.Gotra_Id AS gotraId,
-       p.Sutra_Id AS sutraId,
-       p.Panchang_Sudhi_Id AS panchangSudhiId,
-       p.Vamsha_Id AS vamshaId,
-       p.Mane_Devru_Id AS maneDevruId,
-       p.Kula_Devatha_Id AS kulaDevathaId,
-       p.Pooja_Vruksha_Id AS poojaVrukshaId
-     FROM person p
-     WHERE p.Person_Id = ?
+       ${getPersonSelectColumns(includePrivate)}
+     FROM person
+     WHERE Person_Id = ?
      LIMIT 1`,
     [id]
   );
@@ -404,6 +473,24 @@ const getPersonById = async (personId) => {
   }
 
   return rows[0];
+};
+
+// ==========================================
+// 1. GET PERSON BY ID
+// Admin: any person, including private fields.
+// User: only authorized people, without private fields.
+// ==========================================
+
+const getPersonById = async (personId, { accessContext } = {}) => {
+  const id = parsePositiveId(personId, "personId");
+  const access = normalizePersonAccess(accessContext);
+
+  if (!access.isGlobal && !access.personIds.includes(id)) {
+    // Do not reveal whether an unrelated person record exists.
+    throw createError("Person not found", 404);
+  }
+
+  return getPersonByIdInternal(id, access.isGlobal);
 };
 
 // ==========================================
@@ -475,18 +562,25 @@ const addPersonToFamily = async (
     connection.release();
   }
 
-  return await getPersonById(personId);
+  return await getPersonByIdInternal(personId, true);
 };
 
 // ==========================================
 // 3. GET ALL PEOPLE BY FAMILY ID
+// Admin: all people in the family, including private fields.
+// User: only authorized people, without private fields.
 // ==========================================
 
-const getPeopleByFamilyId = async (familyId) => {
-  const id = parsePositiveId(
-    familyId,
-    "familyId"
-  );
+const getPeopleByFamilyId = async (
+  familyId,
+  { accessContext } = {}
+) => {
+  const id = parsePositiveId(familyId, "familyId");
+  const access = normalizePersonAccess(accessContext);
+
+  if (!access.isGlobal && !access.familyIds.includes(id)) {
+    throw createError("Family not found", 404);
+  }
 
   const [familyRows] = await db.execute(
     `SELECT Family_Id
@@ -500,35 +594,48 @@ const getPeopleByFamilyId = async (familyId) => {
     throw createError("Family not found", 404);
   }
 
-  const [people] = await db.execute(
-    `SELECT
-       Person_Id AS personId,
-       Family_Id AS familyId,
-       First_Name AS firstName,
-       Last_Name AS lastName,
-       father_name AS fatherName,
-       mother_name AS motherName,
-       Gender AS gender,
-       DOB AS dob,
-       Phone_Number AS phoneNumber,
-       Mobile_Number AS mobileNumber,
-       Email AS email,
-       Original_Native AS originalNative,
-       Current_Address AS currentAddress,
-       Gotra_Id AS gotraId,
-       Sutra_Id AS sutraId,
-       Panchang_Sudhi_Id AS panchangSudhiId,
-       Vamsha_Id AS vamshaId,
-       Mane_Devru_Id AS maneDevruId,
-       Kula_Devatha_Id AS kulaDevathaId,
-       Pooja_Vruksha_Id AS poojaVrukshaId
-     FROM person
-     WHERE Family_Id = ?
-     ORDER BY Person_Id ASC`,
-    [id]
-  );
+  if (!access.isGlobal && access.personIds.length === 0) {
+    return [];
+  }
 
-  return people;
+  const peopleById = new Map();
+  const batches = access.isGlobal
+    ? [null]
+    : Array.from(
+        { length: Math.ceil(access.personIds.length / PERSON_READ_BATCH_SIZE) },
+        (_, index) => access.personIds.slice(
+          index * PERSON_READ_BATCH_SIZE,
+          (index + 1) * PERSON_READ_BATCH_SIZE
+        )
+      );
+
+  for (const batch of batches) {
+    const params = [id];
+    let personFilter = "";
+
+    if (!access.isGlobal) {
+      if (!batch || batch.length === 0) continue;
+      personFilter = ` AND Person_Id IN (${createPlaceholders(batch.length)})`;
+      params.push(...batch);
+    }
+
+    const [people] = await db.execute(
+      `SELECT
+         ${getPersonSelectColumns(access.isGlobal)}
+       FROM person
+       WHERE Family_Id = ?${personFilter}
+       ORDER BY Person_Id ASC`,
+      params
+    );
+
+    for (const person of people) {
+      peopleById.set(Number(person.personId), person);
+    }
+  }
+
+  return [...peopleById.values()].sort(
+    (a, b) => Number(a.personId) - Number(b.personId)
+  );
 };
 
 // ==========================================
@@ -600,7 +707,7 @@ const updatePerson = async (
     connection.release();
   }
 
-  return await getPersonById(id);
+  return await getPersonByIdInternal(id, true);
 };
 
 // ==========================================

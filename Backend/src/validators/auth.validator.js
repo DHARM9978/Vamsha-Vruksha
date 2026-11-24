@@ -1,68 +1,106 @@
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
+const OTP_REGEX = /^\d{6}$/;
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^\d{7,15}$/;
+const MIN_NAME_LENGTH = 2;
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_NEW_PASSWORD_BYTES = 72;
 
-// Check whether the request body is a valid object.
-const isObject = (value) => {
+// ======================================================
+// COMMON HELPERS
+// ======================================================
+
+const isPlainObject = (value) => {
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
   return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value)
+    prototype === Object.prototype ||
+    prototype === null
   );
 };
 
-// Validate request body.
-const validateBody = (req, res) => {
-  if (!isObject(req.body)) {
-    res.status(400).json({
-      success: false,
-      message: "Request body must be a valid JSON object",
-    });
+const reject = (res, message, statusCode = 400) => {
+  return res.status(statusCode).json({
+    success: false,
+    message,
+  });
+};
 
+const validateBody = (req, res) => {
+  if (!isPlainObject(req.body)) {
+    reject(res, "Request body must be a valid JSON object");
     return false;
   }
 
   return true;
 };
 
-// Validate email.
-const validateEmail = (email) => {
+const normalizeEmail = (email) => {
+  if (typeof email !== "string") {
+    return "";
+  }
+
+  return email.trim().toLowerCase();
+};
+
+const isValidEmail = (email) => {
+  if (typeof email !== "string") {
+    return false;
+  }
+
+  const value = email.trim();
+
   return (
-    typeof email === "string" &&
-    email.trim().length <= 254 &&
-    emailRegex.test(email.trim())
+    value.length > 0 &&
+    value.length <= MAX_EMAIL_LENGTH &&
+    EMAIL_REGEX.test(value)
   );
 };
 
-// Validate password.
-const validatePassword = (password) => {
-  return (
-    typeof password === "string" &&
-    password.length >= 8 &&
-    password.length <= 128 &&
-    /[A-Z]/.test(password) &&
-    /\d/.test(password)
-  );
+const isValidOtp = (otp) =>
+  typeof otp === "string" && OTP_REGEX.test(otp.trim());
+
+const isValidNewPassword = (password) => {
+  if (
+    typeof password !== "string" ||
+    password.length < 8 ||
+    Buffer.byteLength(password, "utf8") > MAX_NEW_PASSWORD_BYTES ||
+    !/[A-Z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
+  ) {
+    return false;
+  }
+
+  return true;
 };
 
-// Validate six-digit OTP.
-const validateOtp = (otp) => {
-  return (
-    typeof otp === "string" &&
-    /^\d{6}$/.test(otp.trim())
-  );
-};
-
-// Send validation error response.
-const reject = (res, message) => {
-  return res.status(400).json({
-    success: false,
-    message,
-  });
+const normalizeOtpInBody = (req) => {
+  if (typeof req.body.otp === "string") {
+    req.body.otp = req.body.otp.trim();
+  }
 };
 
 // ======================================================
-// REGISTER
+// 1. VALIDATE REGISTRATION
+// POST /api/auth/register
+//
+// Expected body:
+// {
+//   "userName": "Full Name",
+//   "email": "person@example.com",
+//   "phone": "9876543210",
+//   "password": "Password@123"
+// }
 // ======================================================
 
 const validateRegister = (req, res, next) => {
@@ -74,41 +112,54 @@ const validateRegister = (req, res, next) => {
 
   if (
     typeof userName !== "string" ||
-    userName.trim().length < 2 ||
-    userName.trim().length > 100
+    userName.trim().length < MIN_NAME_LENGTH ||
+    userName.trim().length > MAX_NAME_LENGTH
   ) {
     return reject(
       res,
-      "Username must contain between 2 and 100 characters"
+      `Username must contain between ${MIN_NAME_LENGTH} and ${MAX_NAME_LENGTH} characters`
     );
   }
 
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return reject(res, "Please provide a valid email address");
   }
 
   if (
     typeof phone !== "string" ||
-    !phoneRegex.test(phone.trim())
+    !INDIAN_MOBILE_REGEX.test(phone.trim())
   ) {
     return reject(
       res,
-      "Phone number must contain 7 to 15 digits"
+      "Phone number must be a valid 10-digit Indian mobile number"
     );
   }
 
-  if (!validatePassword(password)) {
+  if (!isValidNewPassword(password)) {
     return reject(
       res,
-      "Password must contain at least 8 characters, one uppercase letter and one number"
+      "Password must contain at least 8 characters, one uppercase letter, one number and one special character, and must not exceed 72 UTF-8 bytes"
     );
   }
 
-  next();
+  // Normalize non-secret fields consistently before the controller
+  // and service receive them. Passwords are deliberately not trimmed.
+  req.body.userName = userName.trim();
+  req.body.email = normalizeEmail(email);
+  req.body.phone = phone.trim();
+
+  return next();
 };
 
 // ======================================================
-// LOGIN
+// 2. VALIDATE LOGIN
+// POST /api/auth/login
+//
+// Expected body:
+// {
+//   "identifier": "person@example.com or 9876543210",
+//   "password": "existing password"
+// }
 // ======================================================
 
 const validateLogin = (req, res, next) => {
@@ -121,27 +172,42 @@ const validateLogin = (req, res, next) => {
   if (
     typeof identifier !== "string" ||
     !identifier.trim() ||
-    identifier.trim().length > 254
+    identifier.trim().length > MAX_EMAIL_LENGTH
   ) {
+    return reject(res, "Email or mobile number is required");
+  }
+
+  const normalizedIdentifier = identifier.trim();
+  const isEmail = isValidEmail(normalizedIdentifier);
+  const isIndianMobile = INDIAN_MOBILE_REGEX.test(
+    normalizedIdentifier
+  );
+
+  if (!isEmail && !isIndianMobile) {
     return reject(
       res,
-      "Email or phone number is required"
+      "Enter a valid email address or 10-digit Indian mobile number"
     );
   }
 
   if (
     typeof password !== "string" ||
-    !password.length ||
-    password.length > 128
+    password.length === 0 ||
+    password.length > 1024
   ) {
-    return reject(res, "Password is required");
+    return reject(res, "A valid password is required");
   }
 
-  next();
+  req.body.identifier = isEmail
+    ? normalizedIdentifier.toLowerCase()
+    : normalizedIdentifier;
+
+  return next();
 };
 
 // ======================================================
-// VERIFY SIGNUP OTP
+// 3. VALIDATE SIGNUP OTP
+// POST /api/auth/verify-otp
 // ======================================================
 
 const validateVerifyOtp = (req, res, next) => {
@@ -151,19 +217,23 @@ const validateVerifyOtp = (req, res, next) => {
 
   const { email, otp } = req.body;
 
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return reject(res, "Please provide a valid email address");
   }
 
-  if (!validateOtp(otp)) {
+  if (!isValidOtp(otp)) {
     return reject(res, "OTP must be a six-digit number");
   }
 
-  next();
+  req.body.email = normalizeEmail(email);
+  normalizeOtpInBody(req);
+
+  return next();
 };
 
 // ======================================================
-// RESEND SIGNUP OTP
+// 4. VALIDATE RESEND SIGNUP OTP
+// POST /api/auth/resend-otp
 // ======================================================
 
 const validateResendOtp = (req, res, next) => {
@@ -173,15 +243,18 @@ const validateResendOtp = (req, res, next) => {
 
   const { email } = req.body;
 
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return reject(res, "Please provide a valid email address");
   }
 
-  next();
+  req.body.email = normalizeEmail(email);
+
+  return next();
 };
 
 // ======================================================
-// FORGOT PASSWORD
+// 5. VALIDATE FORGOT PASSWORD
+// POST /api/auth/forgot-password
 // ======================================================
 
 const validateForgotPassword = (req, res, next) => {
@@ -191,15 +264,18 @@ const validateForgotPassword = (req, res, next) => {
 
   const { email } = req.body;
 
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return reject(res, "Please provide a valid email address");
   }
 
-  next();
+  req.body.email = normalizeEmail(email);
+
+  return next();
 };
 
 // ======================================================
-// VERIFY PASSWORD RESET OTP
+// 6. VALIDATE PASSWORD RESET OTP
+// POST /api/auth/verify-reset-otp
 // ======================================================
 
 const validateVerifyResetOtp = (req, res, next) => {
@@ -209,19 +285,30 @@ const validateVerifyResetOtp = (req, res, next) => {
 
   const { email, otp } = req.body;
 
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return reject(res, "Please provide a valid email address");
   }
 
-  if (!validateOtp(otp)) {
+  if (!isValidOtp(otp)) {
     return reject(res, "OTP must be a six-digit number");
   }
 
-  next();
+  req.body.email = normalizeEmail(email);
+  normalizeOtpInBody(req);
+
+  return next();
 };
 
 // ======================================================
-// RESET PASSWORD
+// 7. VALIDATE PASSWORD RESET
+// POST /api/auth/reset-password
+//
+// Expected body:
+// {
+//   "email": "person@example.com",
+//   "otp": "123456",
+//   "newPassword": "NewPassword@123"
+// }
 // ======================================================
 
 const validateResetPassword = (req, res, next) => {
@@ -231,22 +318,25 @@ const validateResetPassword = (req, res, next) => {
 
   const { email, otp, newPassword } = req.body;
 
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return reject(res, "Please provide a valid email address");
   }
 
-  if (!validateOtp(otp)) {
+  if (!isValidOtp(otp)) {
     return reject(res, "OTP must be a six-digit number");
   }
 
-  if (!validatePassword(newPassword)) {
+  if (!isValidNewPassword(newPassword)) {
     return reject(
       res,
-      "New password must contain at least 8 characters, one uppercase letter and one number"
+      "New password must contain at least 8 characters, one uppercase letter, one number and one special character, and must not exceed 72 UTF-8 bytes"
     );
   }
 
-  next();
+  req.body.email = normalizeEmail(email);
+  normalizeOtpInBody(req);
+
+  return next();
 };
 
 // ======================================================

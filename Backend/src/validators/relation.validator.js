@@ -1,5 +1,4 @@
-
-const ALLOWED_RELATIONS = [
+const ALLOWED_RELATIONS = Object.freeze([
   "Father",
   "Mother",
   "Son",
@@ -8,31 +7,41 @@ const ALLOWED_RELATIONS = [
   "Sister",
   "Husband-Wife",
   "Wife-Husband",
-];
+]);
+
+const CREATE_FIELDS = new Set([
+  "relatedPersonId",
+  "relationType",
+]);
+
+const UPDATE_FIELDS = new Set([
+  "personId",
+  "relatedPersonId",
+  "relationType",
+]);
 
 // ======================================================
 // COMMON VALIDATION HELPERS
 // ======================================================
 
-const isValidId = (value) => {
+const isPlainObject = (value) => {
   if (
-    (typeof value !== "number" &&
-      typeof value !== "string") ||
-    String(value).trim() === ""
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value)
   ) {
     return false;
   }
 
-  const id = Number(value);
+  const prototype = Object.getPrototypeOf(value);
 
-  return Number.isSafeInteger(id) && id > 0;
+  return (
+    prototype === Object.prototype ||
+    prototype === null
+  );
 };
 
-const sendValidationError = (
-  res,
-  message,
-  extra = {}
-) => {
+const reject = (res, message, extra = {}) => {
   return res.status(400).json({
     success: false,
     message,
@@ -41,12 +50,8 @@ const sendValidationError = (
 };
 
 const validateRequestBody = (req, res) => {
-  if (
-    !req.body ||
-    typeof req.body !== "object" ||
-    Array.isArray(req.body)
-  ) {
-    sendValidationError(
+  if (!isPlainObject(req.body)) {
+    reject(
       res,
       "Request body must be a JSON object"
     );
@@ -57,15 +62,46 @@ const validateRequestBody = (req, res) => {
   return true;
 };
 
-const validateRelationType = (
-  relationType,
-  res
-) => {
+// Accept only positive safe integer values or digit-only strings.
+const isValidPositiveId = (value) => {
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) && value > 0;
+  }
+
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const normalized = value.trim();
+
+  if (!/^[1-9]\d*$/.test(normalized)) {
+    return false;
+  }
+
+  const parsed = Number(normalized);
+
+  return Number.isSafeInteger(parsed) && parsed > 0;
+};
+
+const validateId = (value, fieldName, res, location = "body") => {
+  if (!isValidPositiveId(value)) {
+    reject(
+      res,
+      `${fieldName} in the ${location} must be a valid positive integer`
+    );
+
+    return false;
+  }
+
+  return true;
+};
+
+const validateRelationType = (relationType, res) => {
   if (
     typeof relationType !== "string" ||
     !ALLOWED_RELATIONS.includes(relationType)
   ) {
-    sendValidationError(
+    reject(
       res,
       "Invalid relationType",
       {
@@ -79,56 +115,98 @@ const validateRelationType = (
   return true;
 };
 
+const rejectUnexpectedFields = (body, allowedFields, res) => {
+  const unexpectedFields = Object.keys(body).filter(
+    (field) => !allowedFields.has(field)
+  );
+
+  if (unexpectedFields.length > 0) {
+    reject(
+      res,
+      "Request body contains unsupported fields",
+      {
+        unsupportedFields: unexpectedFields,
+      }
+    );
+
+    return false;
+  }
+
+  return true;
+};
+
+const validateDistinctPeople = (personId, relatedPersonId, res) => {
+  if (Number(personId) === Number(relatedPersonId)) {
+    reject(
+      res,
+      "A person cannot be related to themselves"
+    );
+
+    return false;
+  }
+
+  return true;
+};
+
 // ======================================================
 // 1. VALIDATE CREATE RELATIONSHIP
 // POST /persons/:personId/relations
 // ======================================================
 
-const validateCreateRelation = (
-  req,
-  res,
-  next
-) => {
+const validateCreateRelation = (req, res, next) => {
   if (!validateRequestBody(req, res)) {
     return;
   }
 
-  const { personId } = req.params;
+  if (
+    !rejectUnexpectedFields(
+      req.body,
+      CREATE_FIELDS,
+      res
+    )
+  ) {
+    return;
+  }
 
+  const { personId } = req.params || {};
   const {
     relatedPersonId,
     relationType,
   } = req.body;
 
-  // Validate source person ID.
-  if (!isValidId(personId)) {
-    return sendValidationError(
+  if (
+    !validateId(
+      personId,
+      "personId",
       res,
-      "personId in the URL must be a valid positive integer"
-    );
+      "URL"
+    )
+  ) {
+    return;
   }
 
-  // Validate related person ID.
-  if (!isValidId(relatedPersonId)) {
-    return sendValidationError(
-      res,
-      "relatedPersonId must be a valid positive integer"
-    );
+  if (
+    !validateId(
+      relatedPersonId,
+      "relatedPersonId",
+      res
+    )
+  ) {
+    return;
   }
 
-  // Validate relationship type.
   if (!validateRelationType(relationType, res)) {
     return;
   }
 
-  // Prevent self-relationship.
   if (
-    Number(personId) === Number(relatedPersonId)
+    !validateDistinctPeople(
+      personId,
+      relatedPersonId,
+      res
+    )
   ) {
-    return sendValidationError(
-      res,
-      "A person cannot be related to themselves"
-    );
+    return;
   }
 
   return next();
@@ -139,60 +217,71 @@ const validateCreateRelation = (
 // PUT /relations/:relationId
 // ======================================================
 
-const validateUpdateRelation = (
-  req,
-  res,
-  next
-) => {
+const validateUpdateRelation = (req, res, next) => {
   if (!validateRequestBody(req, res)) {
     return;
   }
 
-  const { relationId } = req.params;
+  if (
+    !rejectUnexpectedFields(
+      req.body,
+      UPDATE_FIELDS,
+      res
+    )
+  ) {
+    return;
+  }
 
+  const { relationId } = req.params || {};
   const {
     personId,
     relatedPersonId,
     relationType,
   } = req.body;
 
-  // Validate relationship ID.
-  if (!isValidId(relationId)) {
-    return sendValidationError(
+  if (
+    !validateId(
+      relationId,
+      "relationId",
       res,
-      "relationId in the URL must be a valid positive integer"
-    );
+      "URL"
+    )
+  ) {
+    return;
   }
 
-  // Validate source person ID.
-  if (!isValidId(personId)) {
-    return sendValidationError(
-      res,
-      "personId must be a valid positive integer"
-    );
+  if (
+    !validateId(
+      personId,
+      "personId",
+      res
+    )
+  ) {
+    return;
   }
 
-  // Validate related person ID.
-  if (!isValidId(relatedPersonId)) {
-    return sendValidationError(
-      res,
-      "relatedPersonId must be a valid positive integer"
-    );
+  if (
+    !validateId(
+      relatedPersonId,
+      "relatedPersonId",
+      res
+    )
+  ) {
+    return;
   }
 
-  // Validate relationship type.
   if (!validateRelationType(relationType, res)) {
     return;
   }
 
-  // Prevent self-relationship.
   if (
-    Number(personId) === Number(relatedPersonId)
+    !validateDistinctPeople(
+      personId,
+      relatedPersonId,
+      res
+    )
   ) {
-    return sendValidationError(
-      res,
-      "A person cannot be related to themselves"
-    );
+    return;
   }
 
   return next();

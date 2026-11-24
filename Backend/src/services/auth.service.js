@@ -1,3 +1,8 @@
+// SESSION REVOCATION REQUIREMENT:
+// Run the token_version migration before deploying this service.
+// The authentication middleware must compare the JWT tokenVersion
+// claim with user_login.token_version on every authenticated request.
+
 
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
@@ -51,15 +56,19 @@ const validateOtpInput = (email, otp) => {
   }
 };
 
+const MAX_PASSWORD_BYTES = 72;
+
 const validatePassword = (password) => {
   if (
     typeof password !== "string" ||
     password.length < 8 ||
+    Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES ||
     !/[A-Z]/.test(password) ||
-    !/[0-9]/.test(password)
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
   ) {
     throw createError(
-      "Password must contain at least 8 characters, one uppercase letter and one number"
+      "Password must contain at least 8 characters, one uppercase letter, one number and one special character, and must not exceed 72 UTF-8 bytes"
     );
   }
 };
@@ -544,7 +553,8 @@ const loginUser = async ({
        user_phone_number,
        password,
        role,
-       is_verified
+       is_verified,
+       token_version
      FROM user_login
      WHERE user_email = ?
         OR user_phone_number = ?
@@ -583,10 +593,19 @@ const loginUser = async ({
     );
   }
 
+  const tokenVersion = Number(user.token_version);
+
+  if (!Number.isSafeInteger(tokenVersion) || tokenVersion < 0) {
+    throw new Error(
+      "Invalid token_version stored for user account"
+    );
+  }
+
   const token = jwt.sign(
     {
       userId: user.user_id,
-      role: user.role
+      role: user.role,
+      tokenVersion
     },
     process.env.JWT_SECRET,
     {
@@ -661,37 +680,85 @@ const requestPasswordReset = async ({ email }) => {
     throw createError("Email is required");
   }
 
-  // Do not reveal whether an account exists.
-  const [users] = await db.execute(
-    `SELECT user_id, user_email
-     FROM user_login
-     WHERE user_email = ?
-     LIMIT 1`,
-    [normalizedEmail]
-  );
-
   const genericMessage =
     "If an account exists for this email, a reset OTP has been sent.";
-
-  if (users.length === 0) {
-    return {
-      message: genericMessage
-    };
-  }
-
-  const otp = generateOtp();
-
-  const hashedOtp = hashOtp(
-    otp,
-    normalizedEmail,
-    "forgot"
-  );
 
   const connection = await db.getConnection();
 
   try {
     await connection.beginTransaction();
 
+    // Lock the account row first. This serializes concurrent forgot-password
+    // requests for the same account and prevents concurrent requests from
+    // bypassing the account-level resend cooldown.
+    const [users] = await connection.execute(
+      `SELECT
+         user_id,
+         user_email,
+         password_reset_otp_requested_at,
+         CASE
+           WHEN password_reset_otp_requested_at IS NULL THEN NULL
+           ELSE GREATEST(
+             0,
+             TIMESTAMPDIFF(
+               SECOND,
+               password_reset_otp_requested_at,
+               NOW()
+             )
+           )
+         END AS seconds_since_last_request
+       FROM user_login
+       WHERE user_email = ?
+       LIMIT 1
+       FOR UPDATE`,
+      [normalizedEmail]
+    );
+
+    // Use the same response for unknown email addresses to reduce account
+    // enumeration. No OTP is created or sent when the account does not exist.
+    if (users.length === 0) {
+      await connection.commit();
+
+      return {
+        message: genericMessage
+      };
+    }
+
+    const user = users[0];
+    const hasPreviousRequest = Boolean(
+      user.password_reset_otp_requested_at
+    );
+    const elapsedSeconds = Number(
+      user.seconds_since_last_request
+    );
+
+    if (
+      hasPreviousRequest &&
+      Number.isFinite(elapsedSeconds) &&
+      elapsedSeconds < OTP_RESEND_COOLDOWN_SECONDS
+    ) {
+      // Do not reveal whether the account exists or whether the cooldown
+      // was triggered. The public response remains generic.
+      await connection.commit();
+
+      return {
+        message: genericMessage
+      };
+    }
+
+    const otp = generateOtp();
+
+    const hashedOtp = hashOtp(
+      otp,
+      normalizedEmail,
+      "forgot"
+    );
+
+    const expiresAt = new Date(
+      Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000
+    );
+
+    // Invalidate any previous forgot-password OTP.
     await connection.execute(
       `DELETE FROM otp_verification
        WHERE user_email = ?
@@ -699,6 +766,7 @@ const requestPasswordReset = async ({ email }) => {
       [normalizedEmail]
     );
 
+    // Store only the HMAC hash, never the plaintext OTP.
     await connection.execute(
       `INSERT INTO otp_verification
        (
@@ -708,19 +776,30 @@ const requestPasswordReset = async ({ email }) => {
          expires_at,
          attempts
        )
-       VALUES (
-         ?,
-         ?,
-         'forgot',
-         DATE_ADD(NOW(), INTERVAL ? MINUTE),
-         0
-       )`,
+       VALUES (?, ?, 'forgot', ?, 0)`,
       [
         normalizedEmail,
         hashedOtp,
-        OTP_EXPIRY_MINUTES
+        expiresAt
       ]
     );
+
+    // Persist cooldown independently from the OTP row. This timestamp is
+    // retained when resetPassword consumes and deletes the OTP record.
+    await connection.execute(
+      `UPDATE user_login
+       SET password_reset_otp_requested_at = NOW()
+       WHERE user_id = ?`,
+      [user.user_id]
+    );
+
+    // Send before commit so a delivery failure rolls back both the OTP and
+    // the cooldown timestamp. This follows the existing signup OTP pattern.
+    await sendOtpEmail({
+      email: normalizedEmail,
+      otp,
+      purpose: "forgot"
+    });
 
     await connection.commit();
 
@@ -730,25 +809,6 @@ const requestPasswordReset = async ({ email }) => {
 
   } finally {
     connection.release();
-  }
-
-  try {
-    await sendOtpEmail({
-      email: normalizedEmail,
-      otp,
-      purpose: "forgot"
-    });
-
-  } catch (error) {
-    // Remove the OTP if email delivery fails.
-    await db.execute(
-      `DELETE FROM otp_verification
-       WHERE user_email = ?
-         AND purpose = 'forgot'`,
-      [normalizedEmail]
-    );
-
-    throw error;
   }
 
   return {
@@ -995,7 +1055,8 @@ const resetPassword = async ({
       `SELECT user_id
        FROM user_login
        WHERE user_email = ?
-       LIMIT 1`,
+       LIMIT 1
+       FOR UPDATE`,
       [normalizedEmail]
     );
 
@@ -1012,7 +1073,8 @@ const resetPassword = async ({
 
     await connection.execute(
       `UPDATE user_login
-       SET password = ?
+       SET password = ?,
+           token_version = token_version + 1
        WHERE user_email = ?`,
       [
         hashedPassword,

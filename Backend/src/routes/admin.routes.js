@@ -1,7 +1,8 @@
-
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 
 const adminController = require("../controllers/admin.controller");
+const adminFamilyLinkController = require("../controllers/adminFamilyLink.controller");
 
 const authenticate = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
@@ -15,18 +16,34 @@ const {
 const router = express.Router();
 
 // ======================================================
+// ADMIN LOGIN RATE LIMIT
+// Maximum 10 requests per IP in a 15-minute window.
+// ======================================================
+
+const adminLoginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many Admin login attempts. Please try again later.",
+  },
+});
+
+// ======================================================
 // 1. PUBLIC ADMIN LOGIN
 // POST /api/admin/login
 // ======================================================
 
 router.post(
   "/login",
+  adminLoginRateLimiter,
   adminController.loginAdmin
 );
 
 // ======================================================
 // 2. AUTHENTICATION AND ADMIN AUTHORIZATION
-// All routes below require a valid Admin JWT.
 // ======================================================
 
 router.use(authenticate);
@@ -34,7 +51,6 @@ router.use(authorizeRoles("Admin"));
 
 // ======================================================
 // 3. ADMIN PROFILE
-// GET /api/admin/me
 // ======================================================
 
 router.get(
@@ -44,7 +60,6 @@ router.get(
 
 // ======================================================
 // 4. CREATE ANOTHER ADMIN
-// POST /api/admin/create
 // ======================================================
 
 router.post(
@@ -54,7 +69,6 @@ router.post(
 
 // ======================================================
 // 5. REQUEST ADMIN EMAIL CHANGE
-// POST /api/admin/email-change/request
 // ======================================================
 
 router.post(
@@ -65,7 +79,6 @@ router.post(
 
 // ======================================================
 // 6. RESEND ADMIN EMAIL CHANGE OTP
-// POST /api/admin/email-change/resend
 // ======================================================
 
 router.post(
@@ -76,13 +89,36 @@ router.post(
 
 // ======================================================
 // 7. VERIFY ADMIN EMAIL CHANGE OTP
-// POST /api/admin/email-change/verify
 // ======================================================
 
 router.post(
   "/email-change/verify",
   validateVerifyEmailChangeOtp,
   adminController.verifyAdminEmailChangeOtp
+);
+
+// ======================================================
+// 8. FAMILY ACCOUNT LINKING — ADMIN ONLY
+// ======================================================
+
+router.get(
+  "/family-links/unlinked-users",
+  adminFamilyLinkController.listUnlinkedUserAccounts
+);
+
+router.get(
+  "/family-links/people",
+  adminFamilyLinkController.searchPeopleForLinking
+);
+
+router.post(
+  "/family-links/link",
+  adminFamilyLinkController.linkUserToPerson
+);
+
+router.get(
+  "/family-links/users/:userId",
+  adminFamilyLinkController.getUserPersonLink
 );
 
 // ======================================================

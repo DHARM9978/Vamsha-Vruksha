@@ -7,6 +7,10 @@ const authenticate = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
 
 const {
+  loadFamilyAccess,
+} = require("../middleware/familyAccess.middleware");
+
+const {
   validateCreateRelation,
   validateUpdateRelation,
 } = require("../validators/relation.validator");
@@ -23,11 +27,19 @@ router.use(authenticate);
 // ======================================================
 // 1. GET PERSON RELATIONSHIPS
 // GET /api/persons/:personId/relations
-// Admin and User can view relationships.
+//
+// Admin:
+//   - Can view relationships globally.
+//
+// Ordinary User:
+//   - Must have a family access context.
+//   - Can view only relationships where both people are
+//     inside the authorized extended-family network.
 // ======================================================
 
 router.get(
   "/persons/:personId/relations",
+  loadFamilyAccess,
   relationController.getPersonRelations
 );
 

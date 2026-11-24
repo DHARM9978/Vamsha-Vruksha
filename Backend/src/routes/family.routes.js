@@ -2,9 +2,13 @@
 const express = require("express");
 
 const familyController = require("../controllers/family.controller");
-
 const authenticate = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
+
+const {
+  loadFamilyAccess,
+  requireFamilyIdAccess,
+} = require("../middleware/familyAccess.middleware");
 
 const {
   validateFamilyPayload,
@@ -21,27 +25,31 @@ router.use(authenticate);
 
 // ======================================================
 // READ ROUTES
-// Admin and User can access these.
+// Admin: global family access.
+// User: only families in the relationship-based access scope.
 // ======================================================
 
-// Get all families
+// GET /api/families
 router.get(
   "/",
+  loadFamilyAccess,
   familyController.getAllFamilies
 );
 
-// Get family details by ID
+// GET /api/families/:familyId
 router.get(
   "/:familyId",
+  loadFamilyAccess,
+  requireFamilyIdAccess,
   familyController.getFamilyById
 );
 
 // ======================================================
 // ADMIN-ONLY ROUTES
-// Only Admin can modify family records.
+// Only Admin can create, update, or delete family records.
 // ======================================================
 
-// Create family and initial head person
+// POST /api/families
 router.post(
   "/",
   authorizeRoles("Admin"),
@@ -49,7 +57,7 @@ router.post(
   familyController.createFamily
 );
 
-// Update family and initial head person
+// PUT /api/families/:familyId
 router.put(
   "/:familyId",
   authorizeRoles("Admin"),
@@ -57,7 +65,7 @@ router.put(
   familyController.updateFamily
 );
 
-// Delete family and associated records
+// DELETE /api/families/:familyId
 router.delete(
   "/:familyId",
   authorizeRoles("Admin"),
@@ -69,4 +77,3 @@ router.delete(
 // ======================================================
 
 module.exports = router;
-  

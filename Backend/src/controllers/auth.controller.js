@@ -1,189 +1,245 @@
-
 const authService = require("../services/auth.service");
 
-// ==========================================
-// REGISTER
-// ==========================================
+// ======================================================
+// RESPONSE HELPERS
+// ======================================================
 
-const register = async (req, res, next) => {
+const setPrivateResponseHeaders = (res) => {
+  res.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, private"
+  );
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+};
+
+// Explicit allow-list for account data returned to the frontend.
+// Never serialize password hashes, OTP records, token versions,
+// verification internals, or other database columns.
+const pickUserProfile = (user) => {
+  if (!user || typeof user !== "object") {
+    return null;
+  }
+
+  return {
+    userId: user.userId,
+    userName: user.userName,
+    email: user.email,
+    phone: user.phone ?? null,
+    role: user.role,
+  };
+};
+
+// Forward service and controller errors to the centralized
+// Express error middleware.
+const handle = (controller) => async (req, res, next) => {
   try {
-    const { userName, email, phone, password } = req.body || {};
-
-    const result = await authService.registerUser({
-      userName,
-      email,
-      phone,
-      password
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: result.message,
-      data: {
-        userId: result.userId,
-        email: result.email
-      }
-    });
+    return await controller(req, res);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// ==========================================
-// VERIFY SIGNUP OTP
-// ==========================================
+// ======================================================
+// 1. REGISTER
+// POST /api/auth/register
+// ======================================================
 
-const verifySignupOtp = async (req, res, next) => {
-  try {
-    const { email, otp } = req.body || {};
+const register = handle(async (req, res) => {
+  const {
+    userName,
+    email,
+    phone,
+    password,
+  } = req.body || {};
 
-    const result = await authService.verifySignupOtp({
-      email,
-      otp
-    });
+  const result = await authService.registerUser({
+    userName,
+    email,
+    phone,
+    password,
+  });
 
-    return res.status(200).json({
-      success: true,
-      message: result.message,
-      data: {
-        email: result.email
-      }
-    });
-  } catch (error) {
-    next(error);
+  setPrivateResponseHeaders(res);
+
+  return res.status(201).json({
+    success: true,
+    message: result.message,
+    data: {
+      userId: result.userId,
+      email: result.email,
+    },
+  });
+});
+
+// ======================================================
+// 2. VERIFY SIGNUP OTP
+// POST /api/auth/verify-otp
+// ======================================================
+
+const verifySignupOtp = handle(async (req, res) => {
+  const {
+    email,
+    otp,
+  } = req.body || {};
+
+  const result = await authService.verifySignupOtp({
+    email,
+    otp,
+  });
+
+  setPrivateResponseHeaders(res);
+
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    data: {
+      email: result.email,
+    },
+  });
+});
+
+// ======================================================
+// 3. RESEND SIGNUP OTP
+// POST /api/auth/resend-otp
+// ======================================================
+
+const resendSignupOtp = handle(async (req, res) => {
+  const { email } = req.body || {};
+
+  const result = await authService.resendSignupOtp({
+    email,
+  });
+
+  setPrivateResponseHeaders(res);
+
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
+
+// ======================================================
+// 4. LOGIN
+// POST /api/auth/login
+// ======================================================
+
+const login = handle(async (req, res) => {
+  const {
+    identifier,
+    password,
+  } = req.body || {};
+
+  const result = await authService.loginUser({
+    identifier,
+    password,
+  });
+
+  if (!result || typeof result.token !== "string" || !result.token) {
+    const error = new Error("Authentication service returned an invalid login result");
+    error.statusCode = 500;
+    throw error;
   }
-};
 
-// ==========================================
-// RESEND SIGNUP OTP
-// ==========================================
+  setPrivateResponseHeaders(res);
 
-const resendSignupOtp = async (req, res, next) => {
-  try {
-    const { email } = req.body || {};
+  return res.status(200).json({
+    success: true,
+    message: "Login successful",
+    data: {
+      token: result.token,
+      user: pickUserProfile(result.user),
+    },
+  });
+});
 
-    const result = await authService.resendSignupOtp({
-      email
-    });
+// ======================================================
+// 5. GET CURRENT AUTHENTICATED USER
+// GET /api/auth/me
+// ======================================================
 
-    return res.status(200).json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    next(error);
+const getCurrentUser = handle(async (req, res) => {
+  const userId = req.user?.userId;
+
+  if (!Number.isSafeInteger(Number(userId)) || Number(userId) <= 0) {
+    const error = new Error("Authenticated user context is invalid");
+    error.statusCode = 401;
+    throw error;
   }
-};
 
-// ==========================================
-// LOGIN
-// ==========================================
+  const user = await authService.getCurrentUser(Number(userId));
 
-const login = async (req, res, next) => {
-  try {
-    const { identifier, password } = req.body || {};
+  setPrivateResponseHeaders(res);
 
-    const result = await authService.loginUser({
-      identifier,
-      password
-    });
+  return res.status(200).json({
+    success: true,
+    message: "Authenticated user retrieved successfully",
+    data: {
+      user: pickUserProfile(user),
+    },
+  });
+});
 
-    return res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: {
-        token: result.token,
-        user: result.user
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+// ======================================================
+// 6. FORGOT PASSWORD
+// POST /api/auth/forgot-password
+// ======================================================
 
-// ==========================================
-// GET CURRENT USER
-// ==========================================
+const forgotPassword = handle(async (req, res) => {
+  const result = await authService.requestPasswordReset({
+    email: req.body?.email,
+  });
 
-const getCurrentUser = async (req, res, next) => {
-  try {
-    const user = await authService.getCurrentUser(
-      req.user.userId
-    );
+  setPrivateResponseHeaders(res);
 
-    return res.status(200).json({
-      success: true,
-      message: "Authenticated user retrieved successfully",
-      data: { user }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
 
-// ==========================================
-// FORGOT PASSWORD
-// ==========================================
+// ======================================================
+// 7. VERIFY PASSWORD RESET OTP
+// POST /api/auth/verify-reset-otp
+// ======================================================
 
-const forgotPassword = async (req, res, next) => {
-  try {
-    const result = await authService.requestPasswordReset({
-      email: req.body.email
-    });
+const verifyResetOtp = handle(async (req, res) => {
+  const result = await authService.verifyPasswordResetOtp({
+    email: req.body?.email,
+    otp: req.body?.otp,
+  });
 
-    return res.status(200).json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  setPrivateResponseHeaders(res);
 
-// ==========================================
-// VERIFY PASSWORD RESET OTP
-// ==========================================
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
 
-const verifyResetOtp = async (req, res, next) => {
-  try {
-    const result = await authService.verifyPasswordResetOtp({
-      email: req.body.email,
-      otp: req.body.otp
-    });
+// ======================================================
+// 8. RESET PASSWORD
+// POST /api/auth/reset-password
+// ======================================================
 
-    return res.status(200).json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+const resetPassword = handle(async (req, res) => {
+  const result = await authService.resetPassword({
+    email: req.body?.email,
+    otp: req.body?.otp,
+    newPassword: req.body?.newPassword,
+  });
 
-// ==========================================
-// RESET PASSWORD
-// ==========================================
+  setPrivateResponseHeaders(res);
 
-const resetPassword = async (req, res, next) => {
-  try {
-    const result = await authService.resetPassword({
-      email: req.body.email,
-      otp: req.body.otp,
-      newPassword: req.body.newPassword
-    });
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
 
-    return res.status(200).json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ==========================================
+// ======================================================
 // EXPORT CONTROLLERS
-// ==========================================
+// ======================================================
 
 module.exports = {
   register,
@@ -193,5 +249,5 @@ module.exports = {
   getCurrentUser,
   forgotPassword,
   verifyResetOtp,
-  resetPassword
+  resetPassword,
 };

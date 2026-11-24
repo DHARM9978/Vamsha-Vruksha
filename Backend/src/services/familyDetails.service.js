@@ -1,4 +1,3 @@
-
 const db = require("../config/db");
 
 const MAX_GENERATIONS = 20;
@@ -31,7 +30,7 @@ const parsePositiveId = (value, fieldName = "ID") => {
 // PERSON QUERY
 // ======================================================
 
-const PERSON_SELECT = `
+const getPersonSelect = (includePrivate) => `
   SELECT
     p.Person_Id,
     p.Family_Id,
@@ -41,11 +40,12 @@ const PERSON_SELECT = `
     p.mother_name,
     p.Gender,
     p.DOB,
+    ${includePrivate ? `
     p.Phone_Number,
     p.Mobile_Number,
     p.Email,
+    p.Current_Address,` : ""}
     p.Original_Native,
-    p.Current_Address,
     g.Gotra_Name,
     s.Sutra_Name,
     v.Vamsha_Name,
@@ -88,38 +88,20 @@ const getFullName = (person) =>
     .join(" ")
     .trim() || `Person ${person.Person_Id}`;
 
-const mapPerson = (person) => {
+const mapPerson = (person, includePrivate = true) => {
   if (!person) return null;
 
-  return {
+  const mapped = {
     personId: Number(person.Person_Id),
-
     familyId: Number(person.Family_Id),
-
     firstName: person.First_Name,
-
     lastName: person.Last_Name,
-
     fullName: getFullName(person),
-
     gender: person.Gender,
-
     dob: person.DOB,
-
     fatherName: person.father_name,
-
     motherName: person.mother_name,
-
-    phoneNumber: person.Phone_Number,
-
-    mobileNumber: person.Mobile_Number,
-
-    email: person.Email,
-
     originalNative: person.Original_Native,
-
-    currentAddress: person.Current_Address,
-
     culturalDetails: {
       gotra: person.Gotra_Name || null,
       sutra: person.Sutra_Name || null,
@@ -130,6 +112,17 @@ const mapPerson = (person) => {
       poojaVruksha: person.Pooja_Vruksha_Name || null,
     },
   };
+
+  // Contact and residential information is selected and returned only
+  // for Admin requests. Ordinary User SQL queries do not select these fields.
+  if (includePrivate) {
+    mapped.phoneNumber = person.Phone_Number;
+    mapped.mobileNumber = person.Mobile_Number;
+    mapped.email = person.Email;
+    mapped.currentAddress = person.Current_Address;
+  }
+
+  return mapped;
 };
 
 // ======================================================
@@ -147,18 +140,20 @@ const normalizeRelationType = (value) =>
 // ======================================================
 
 /*
-  Relationship direction follows the existing
-  relation.service.js implementation.
+  Relationship direction follows relation.service.js.
 
   A --Father/Mother--> B
+
+  A is the parent.
+  B is the child.
+
+  A --Son/Daughter--> B
 
   A is the child.
   B is the parent.
 
-  A --Son/Daughter--> B
-
-  A is the parent.
-  B is the child.
+  Reverse rows carry the reciprocal relation type, so both stored
+  directions normalize to the same parentId/childId pair.
 */
 
 const normalizeRelation = (relation) => {
@@ -182,7 +177,7 @@ const normalizeRelation = (relation) => {
     return null;
   }
 
-  // Parent relationship.
+  // Source is the parent for Father/Mother relationship labels.
 
   if (
     relationType === "father" ||
@@ -190,12 +185,12 @@ const normalizeRelation = (relation) => {
   ) {
     return {
       type: "parent",
-      parentId: targetId,
-      childId: sourceId,
+      parentId: sourceId,
+      childId: targetId,
     };
   }
 
-  // Child relationship.
+  // Source is the child for Son/Daughter relationship labels.
 
   if (
     relationType === "son" ||
@@ -203,8 +198,8 @@ const normalizeRelation = (relation) => {
   ) {
     return {
       type: "parent",
-      parentId: sourceId,
-      childId: targetId,
+      parentId: targetId,
+      childId: sourceId,
     };
   }
 
@@ -284,20 +279,14 @@ const getIds = (map, id) =>
 // FETCH SPOUSE FAMILY DETAILS
 // ======================================================
 
-const fetchFamilySummaries = async (familyIds) => {
-  const ids = [
-    ...new Set(familyIds.map(Number)),
-  ].filter(
+const fetchFamilySummaries = async (familyIds, options = {}) => {
+  const ids = [...new Set((familyIds || []).map(Number))].filter(
     (id) => Number.isSafeInteger(id) && id > 0
   );
 
-  if (ids.length === 0) {
-    return new Map();
-  }
+  if (ids.length === 0) return new Map();
 
-  const placeholders = ids
-    .map(() => "?")
-    .join(",");
+  const placeholders = ids.map(() => "?").join(",");
 
   const [rows] = await db.execute(
     `SELECT
@@ -307,48 +296,95 @@ const fetchFamilySummaries = async (familyIds) => {
        f.Native_Place,
        f.Gotra_Id,
        g.Gotra_Name
-
      FROM family f
-
-     LEFT JOIN gothra g
-       ON g.Gotra_Id = f.Gotra_Id
-
+     LEFT JOIN gothra g ON g.Gotra_Id = f.Gotra_Id
      WHERE f.Family_Id IN (${placeholders})`,
     ids
   );
 
-  return new Map(
-    rows.map((row) => [
-      Number(row.Family_Id),
-      {
-        familyId: Number(row.Family_Id),
+  const result = new Map(rows.map((row) => [
+    Number(row.Family_Id),
+    {
+      familyId: Number(row.Family_Id),
+      familyName: row.Family_Name,
+      referenceId: row.Reference_Id,
+      nativePlace: row.Native_Place,
+      gotraId: row.Gotra_Id === null ? null : Number(row.Gotra_Id),
+      gotraName: row.Gotra_Name || null,
+    },
+  ]));
 
-        familyName: row.Family_Name,
+  // For ordinary Users, attach the full NON-CONFIDENTIAL member records
+  // of each directly connected spouse family. This is a single-hop family
+  // expansion: marriages of collateral members are not traversed.
+  if (options.includeMembers) {
+    const allowedPersonIds = options.allowedPersonIds || null;
+    const includePrivate = Boolean(options.includePrivate);
 
-        referenceId: row.Reference_Id,
+    for (const familyId of ids) {
+      const familySummary = result.get(familyId);
+      if (!familySummary) continue;
 
-        nativePlace: row.Native_Place,
+      const [memberRows] = await db.execute(
+        `${getPersonSelect(includePrivate)}
+         WHERE p.Family_Id = ?
+         ORDER BY p.Person_Id ASC`,
+        [familyId]
+      );
 
-        gotraId:
-          row.Gotra_Id === null
-            ? null
-            : Number(row.Gotra_Id),
+      const safeRows = allowedPersonIds
+        ? memberRows.filter((person) => allowedPersonIds.has(Number(person.Person_Id)))
+        : memberRows;
 
-        gotraName: row.Gotra_Name || null,
-      },
-    ])
-  );
+      familySummary.members = safeRows.map((person) =>
+        mapPerson(person, includePrivate)
+      );
+      familySummary.totalMembers = familySummary.members.length;
+    }
+  }
+
+  return result;
 };
-
 // ======================================================
 // GET COMPLETE FAMILY DETAILS
 // ======================================================
 
-const getFamilyDetails = async (familyId) => {
-  const validFamilyId = parsePositiveId(
-    familyId,
-    "Family ID"
-  );
+const getFamilyDetails = async (familyId, options = {}) => {
+  const validFamilyId = parsePositiveId(familyId, "Family ID");
+  const accessContext = options.accessContext || null;
+  const isGlobal = Boolean(accessContext && accessContext.isGlobal);
+  const includePrivate = isGlobal;
+
+  if (!isGlobal) {
+    if (!accessContext || accessContext.role !== "User") {
+      throw createError("A valid family access context is required", 403);
+    }
+
+    const permittedFamilyIds = new Set(
+      (accessContext.familyIds || []).map(Number)
+    );
+
+    if (!permittedFamilyIds.has(validFamilyId)) {
+      // Use 404 to avoid confirming that another family exists.
+      throw createError("Family not found", 404);
+    }
+  }
+
+  const allowedPersonIds = isGlobal
+    ? null
+    : new Set((accessContext.extendedPersonIds || []).map(Number));
+
+  const bloodlinePersonIds = isGlobal
+    ? null
+    : new Set((accessContext.bloodlinePersonIds || []).map(Number));
+
+  const allowedSpouseIds = isGlobal
+    ? null
+    : new Set((accessContext.spousePersonIds || []).map(Number));
+
+  const permittedBloodlineFamilyIds = isGlobal
+    ? null
+    : new Set((accessContext.bloodlineFamilyIds || []).map(Number));
 
   // ====================================================
   // STEP 1: FETCH SELECTED FAMILY
@@ -407,12 +443,18 @@ const getFamilyDetails = async (familyId) => {
   // STEP 2: FETCH FAMILY MEMBERS
   // ====================================================
 
-  const [memberRows] = await db.execute(
-    `${PERSON_SELECT}
+  const [queriedMemberRows] = await db.execute(
+    `${getPersonSelect(includePrivate)}
      WHERE p.Family_Id = ?
      ORDER BY p.Person_Id ASC`,
     [validFamilyId]
   );
+
+  const memberRows = isGlobal
+    ? queriedMemberRows
+    : queriedMemberRows.filter((person) =>
+        allowedPersonIds.has(Number(person.Person_Id))
+      );
 
   // Handle an empty family.
 
@@ -435,6 +477,14 @@ const getFamilyDetails = async (familyId) => {
       siblingBranches: [],
 
       members: [],
+      extendedFamilyOnly: !isGlobal && !permittedBloodlineFamilyIds.has(validFamilyId),
+      familyAccess: isGlobal
+        ? { scope: "global", isGlobal: true }
+        : {
+            scope: "relationship_based",
+            isGlobal: false,
+            anchorPersonId: Number(accessContext.anchorPersonId),
+          },
 
       meta: {
         totalMembers: 0,
@@ -442,6 +492,34 @@ const getFamilyDetails = async (familyId) => {
         totalSiblings: 0,
         generationsProcessed: 0,
         truncated: false,
+        treeAvailable: isGlobal || permittedBloodlineFamilyIds.has(validFamilyId),
+      },
+    };
+  }
+
+  // A spouse-side family is authorized for non-confidential Family Details,
+  // but it must not become a new bloodline tree root for this User.
+  const isBloodlineFamily = isGlobal || permittedBloodlineFamilyIds.has(validFamilyId);
+
+  if (!isBloodlineFamily) {
+    return {
+      family: mappedFamily,
+      headPerson: null,
+      spouse: null,
+      spouses: [],
+      spouseFamily: null,
+      spouseFamilies: [],
+      children: [],
+      siblingBranches: [],
+      members: memberRows.map((person) => mapPerson(person, false)),
+      extendedFamilyOnly: true,
+      meta: {
+        totalMembers: memberRows.length,
+        totalChildren: 0,
+        totalSiblings: 0,
+        generationsProcessed: 0,
+        truncated: false,
+        treeAvailable: false,
       },
     };
   }
@@ -457,7 +535,34 @@ const getFamilyDetails = async (familyId) => {
     in the selected family is the family head.
   */
 
-  const headRow = memberRows[0];
+  const headRow = isGlobal
+    ? memberRows[0]
+    : memberRows
+        .filter((person) => bloodlinePersonIds.has(Number(person.Person_Id)))
+        .sort((a, b) => Number(a.Person_Id) - Number(b.Person_Id))[0];
+
+  if (!headRow) {
+    return {
+      family: mappedFamily,
+      headPerson: null,
+      spouse: null,
+      spouses: [],
+      spouseFamily: null,
+      spouseFamilies: [],
+      children: [],
+      siblingBranches: [],
+      members: memberRows.map((person) => mapPerson(person, false)),
+      extendedFamilyOnly: true,
+      meta: {
+        totalMembers: memberRows.length,
+        totalChildren: 0,
+        totalSiblings: 0,
+        generationsProcessed: 0,
+        truncated: false,
+        treeAvailable: false,
+      },
+    };
+  }
 
   const headId = Number(headRow.Person_Id);
 
@@ -496,7 +601,8 @@ const getFamilyDetails = async (familyId) => {
     );
 
     const missingIds = ids.filter(
-      (id) => !peopleCache.has(id)
+      (id) => !peopleCache.has(id) &&
+        (isGlobal || allowedPersonIds.has(id))
     );
 
     if (missingIds.length === 0) {
@@ -508,7 +614,7 @@ const getFamilyDetails = async (familyId) => {
       .join(",");
 
     const [rows] = await db.execute(
-      `${PERSON_SELECT}
+      `${getPersonSelect(includePrivate)}
        WHERE p.Person_Id IN (${placeholders})`,
       missingIds
     );
@@ -565,9 +671,37 @@ const getFamilyDetails = async (familyId) => {
     );
 
     for (const relation of relations) {
-      const normalized = normalizeRelation(relation);
+      const sourceId = Number(relation.Person_Id);
+      const targetId = Number(relation.Related_Person_Id);
 
+      if (!isGlobal) {
+        if (!allowedPersonIds.has(sourceId) || !allowedPersonIds.has(targetId)) {
+          continue;
+        }
+      }
+
+      const normalized = normalizeRelation(relation);
       if (!normalized) continue;
+
+      if (!isGlobal) {
+        if (normalized.type === "spouse") {
+          const permittedSpousePair =
+            (bloodlinePersonIds.has(sourceId) && allowedSpouseIds.has(targetId)) ||
+            (bloodlinePersonIds.has(targetId) && allowedSpouseIds.has(sourceId));
+
+          if (!permittedSpousePair) continue;
+        } else if (normalized.type === "sibling") {
+          if (
+            !bloodlinePersonIds.has(sourceId) ||
+            !bloodlinePersonIds.has(targetId)
+          ) continue;
+        } else if (normalized.type === "parent") {
+          if (
+            !bloodlinePersonIds.has(normalized.parentId) ||
+            !bloodlinePersonIds.has(normalized.childId)
+          ) continue;
+        }
+      }
 
       // ----------------------------------------------
       // SPOUSE
@@ -631,7 +765,7 @@ const getFamilyDetails = async (familyId) => {
   const headSpouseIds = getIds(
     spouseMap,
     headId
-  ).sort((a, b) => a - b);
+  ).filter((id) => isGlobal || allowedSpouseIds.has(id)).sort((a, b) => a - b);
 
   // Get family head siblings.
 
@@ -639,7 +773,7 @@ const getFamilyDetails = async (familyId) => {
     siblingMap,
     headId
   )
-    .filter((id) => id !== headId)
+    .filter((id) => id !== headId && (isGlobal || bloodlinePersonIds.has(id)))
     .sort((a, b) => a - b);
 
   await ensurePeople([
@@ -735,7 +869,7 @@ const getFamilyDetails = async (familyId) => {
       truncated.value = true;
 
       return {
-        ...mapPerson(personRow),
+        ...mapPerson(personRow, includePrivate),
 
         spouse: null,
         spouses: [],
@@ -763,7 +897,7 @@ const getFamilyDetails = async (familyId) => {
       spouseMap,
       id
     )
-      .filter((spouseId) => spouseId !== id)
+      .filter((spouseId) => spouseId !== id && (isGlobal || allowedSpouseIds.has(spouseId)))
       .sort((a, b) => a - b);
 
     await ensurePeople(spouseIds);
@@ -796,7 +930,8 @@ const getFamilyDetails = async (familyId) => {
         if (
           child !== id &&
           !path.has(child) &&
-          !spouseIds.includes(child)
+          !spouseIds.includes(child) &&
+          (isGlobal || bloodlinePersonIds.has(child))
         ) {
           childIds.add(child);
         }
@@ -856,7 +991,7 @@ const getFamilyDetails = async (familyId) => {
     }
 
     return {
-      ...mapPerson(personRow),
+      ...mapPerson(personRow, includePrivate),
 
       spouse: null,
       spouses: [],
@@ -895,7 +1030,8 @@ const getFamilyDetails = async (familyId) => {
 
       if (
         id !== headId &&
-        !validHeadSpouseIds.includes(id)
+        !validHeadSpouseIds.includes(id) &&
+        (isGlobal || bloodlinePersonIds.has(id))
       ) {
         directChildIds.add(id);
       }
@@ -981,7 +1117,8 @@ const getFamilyDetails = async (familyId) => {
 
     siblingBranches.push({
       person: mapPerson(
-        peopleCache.get(siblingId)
+        peopleCache.get(siblingId),
+        includePrivate
       ),
 
       spouse: null,
@@ -1015,7 +1152,7 @@ const getFamilyDetails = async (familyId) => {
     const spouseIds = getIds(
       spouseMap,
       personId
-    );
+    ).filter((spouseId) => isGlobal || allowedSpouseIds.has(spouseId));
 
     for (const spouseId of spouseIds) {
       if (peopleCache.has(spouseId)) {
@@ -1030,18 +1167,30 @@ const getFamilyDetails = async (familyId) => {
   // STEP 13: FETCH SPOUSE FAMILY DETAILS
   // ====================================================
 
-  const spouseFamilyMap = await fetchFamilySummaries(
+  const spouseFamilyIds = [...new Set(
     [...allSpouseIds]
       .map((id) => peopleCache.get(id))
       .filter(Boolean)
       .map((person) => Number(person.Family_Id))
+      .filter((id) => Number.isSafeInteger(id) && id > 0)
+      .filter((id) => isGlobal || (accessContext.spouseFamilyIds || []).includes(id))
+      .filter((id) => isGlobal || !permittedBloodlineFamilyIds.has(id))
+  )];
+
+  const spouseFamilyMap = await fetchFamilySummaries(
+    spouseFamilyIds,
+    {
+      includeMembers: !isGlobal,
+      includePrivate,
+      allowedPersonIds,
+    }
   );
 
   const mapSpouse = (person) => {
     if (!person) return null;
 
     return {
-      ...mapPerson(person),
+      ...mapPerson(person, includePrivate),
 
       family:
         spouseFamilyMap.get(
@@ -1134,7 +1283,7 @@ const getFamilyDetails = async (familyId) => {
   return {
     family: mappedFamily,
 
-    headPerson: mapPerson(headRow),
+    headPerson: mapPerson(headRow, includePrivate),
 
     spouse: mappedHeadSpouse,
 
@@ -1143,9 +1292,24 @@ const getFamilyDetails = async (familyId) => {
     spouseFamily:
       mappedHeadSpouse?.family || null,
 
-    spouseFamilies: mappedHeadSpouses
-      .map((person) => person.family)
-      .filter(Boolean),
+    spouseFamilies: [...new Map(
+      [...allSpouseIds]
+        .map((id) => peopleCache.get(id))
+        .filter(Boolean)
+        .map((person) => spouseFamilyMap.get(Number(person.Family_Id)))
+        .filter(Boolean)
+        .map((family) => [family.familyId, family])
+    ).values()],
+
+    extendedFamilyOnly: false,
+
+    familyAccess: isGlobal
+      ? { scope: "global", isGlobal: true }
+      : {
+          scope: "relationship_based",
+          isGlobal: false,
+          anchorPersonId: Number(accessContext.anchorPersonId),
+        },
 
     // Main family head descendants.
 
@@ -1158,7 +1322,7 @@ const getFamilyDetails = async (familyId) => {
     // Preserve every person assigned to this family,
     // including people without relationship records.
 
-    members: memberRows.map(mapPerson),
+    members: memberRows.map((person) => mapPerson(person, includePrivate)),
 
     meta: {
       totalMembers: memberRows.length,
@@ -1171,6 +1335,7 @@ const getFamilyDetails = async (familyId) => {
         deepestGeneration.value,
 
       truncated: truncated.value,
+      treeAvailable: true,
     },
   };
 };

@@ -184,7 +184,8 @@ const loginAdmin = async ({
        user_phone_number,
        password,
        role,
-       is_verified
+       is_verified,
+       token_version
      FROM user_login
      WHERE (user_email = ? OR user_phone_number = ?)
        AND role = 'Admin'
@@ -223,10 +224,23 @@ const loginAdmin = async ({
     );
   }
 
+  const tokenVersion = Number(admin.token_version);
+
+  if (
+    !Number.isSafeInteger(tokenVersion) ||
+    tokenVersion < 0
+  ) {
+    throw createError(
+      "Admin session version is invalid. Please contact support.",
+      500
+    );
+  }
+
   const token = jwt.sign(
     {
       userId: admin.user_id,
       role: admin.role,
+      tokenVersion,
     },
     process.env.JWT_SECRET,
     {
@@ -336,9 +350,10 @@ const createAdmin = async ({
          user_phone_number,
          password,
          role,
-         is_verified
+         is_verified,
+         token_version
        )
-       VALUES (?, ?, ?, ?, 'Admin', 1)`,
+       VALUES (?, ?, ?, ?, 'Admin', 1, 0)`,
       [
         normalizedName,
         normalizedEmail,
@@ -1144,7 +1159,8 @@ const verifyAdminEmailChangeOtp = async ({
 
     const [updateResult] = await connection.execute(
       `UPDATE user_login
-       SET user_email = ?
+       SET user_email = ?,
+           token_version = token_version + 1
        WHERE user_id = ?
          AND role = 'Admin'`,
       [

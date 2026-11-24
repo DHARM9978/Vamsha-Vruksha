@@ -3,8 +3,32 @@ const relationService = require("../services/relation.service");
 const logger = require("../utils/logger");
 
 // ======================================================
+// COMMON RESPONSE / ACCESS HELPERS
+// ======================================================
+
+const requireFamilyAccessContext = (req) => {
+  if (!req.familyAccess) {
+    const error = new Error(
+      "Family access context is missing. Ensure loadFamilyAccess runs before this controller."
+    );
+
+    error.statusCode = 500;
+    error.code = "FAMILY_ACCESS_CONTEXT_MISSING";
+
+    throw error;
+  }
+
+  return req.familyAccess;
+};
+
+const setPrivateResponseHeaders = (res) => {
+  res.set("Cache-Control", "no-store");
+  res.set("Pragma", "no-cache");
+};
+
+// ======================================================
 // 1. ADD RELATIONSHIP
-// POST /api/relations/persons/:personId/relations
+// Admin-only route
 // ======================================================
 
 const addRelation = async (req, res, next) => {
@@ -13,6 +37,8 @@ const addRelation = async (req, res, next) => {
       req.params.personId,
       req.body
     );
+
+    setPrivateResponseHeaders(res);
 
     logger.info("Relationship created successfully", {
       requestId: req.requestId,
@@ -26,23 +52,31 @@ const addRelation = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
 // ======================================================
 // 2. GET PERSON RELATIONSHIPS
-// GET /api/relations/persons/:personId/relations
 // ======================================================
 
 const getPersonRelations = async (req, res, next) => {
   try {
+    const accessContext = requireFamilyAccessContext(req);
+
     const relations = await relationService.getPersonRelations(
-      req.params.personId
+      req.params.personId,
+      {
+        accessContext,
+      }
     );
+
+    setPrivateResponseHeaders(res);
 
     logger.info("Person relationships retrieved successfully", {
       requestId: req.requestId,
+      personId: Number(req.params.personId),
+      totalRelations: relations.length,
     });
 
     return res.status(200).json({
@@ -54,13 +88,13 @@ const getPersonRelations = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
 // ======================================================
 // 3. UPDATE RELATIONSHIP
-// PUT /api/relations/relations/:relationId
+// Admin-only route
 // ======================================================
 
 const updateRelation = async (req, res, next) => {
@@ -70,8 +104,11 @@ const updateRelation = async (req, res, next) => {
       req.body
     );
 
+    setPrivateResponseHeaders(res);
+
     logger.info("Relationship updated successfully", {
       requestId: req.requestId,
+      relationId: Number(req.params.relationId),
     });
 
     return res.status(200).json({
@@ -82,13 +119,13 @@ const updateRelation = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
 // ======================================================
 // 4. DELETE RELATIONSHIP
-// DELETE /api/relations/relations/:relationId
+// Admin-only route
 // ======================================================
 
 const deleteRelation = async (req, res, next) => {
@@ -97,8 +134,11 @@ const deleteRelation = async (req, res, next) => {
       req.params.relationId
     );
 
+    setPrivateResponseHeaders(res);
+
     logger.info("Relationship deleted successfully", {
       requestId: req.requestId,
+      relationId: Number(req.params.relationId),
     });
 
     return res.status(200).json({
@@ -111,7 +151,7 @@ const deleteRelation = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 

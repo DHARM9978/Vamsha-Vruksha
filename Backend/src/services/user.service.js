@@ -18,21 +18,21 @@ const createError = (message, statusCode = 400) => {
   return error;
 };
 
-// Password requirements:
-// - Minimum 8 characters
-// - At least one uppercase letter
-// - At least one number
-// - At least one special character
+// Keep the self-service password policy aligned with auth.service.js
+// and auth.validator.js. bcrypt processes at most 72 UTF-8 bytes.
+const MAX_PASSWORD_BYTES = 72;
+
 const validatePassword = (password) => {
   if (
     typeof password !== "string" ||
     password.length < 8 ||
+    Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES ||
     !/[A-Z]/.test(password) ||
     !/[0-9]/.test(password) ||
-    !/[!@#$%^&*]/.test(password)
+    !/[^A-Za-z0-9]/.test(password)
   ) {
     throw createError(
-      "Password must contain at least 8 characters, one uppercase letter, one number and one special character (!@#$%^&*)."
+      "Password must contain at least 8 characters, one uppercase letter, one number and one special character, and must not exceed 72 UTF-8 bytes"
     );
   }
 };
@@ -117,7 +117,6 @@ const updateUserProfile = async ({
   try {
     await connection.beginTransaction();
 
-    // Lock the user record during the update.
     const [users] = await connection.execute(
       `SELECT user_id
        FROM user_login
@@ -131,7 +130,6 @@ const updateUserProfile = async ({
       throw createError("User account not found", 404);
     }
 
-    // Check whether another account uses this phone.
     if (normalizedPhone) {
       const [existingPhone] = await connection.execute(
         `SELECT user_id
@@ -203,17 +201,14 @@ const changeUserPassword = async ({
     );
   }
 
-  // Check password confirmation.
   if (newPassword !== confirmPassword) {
     throw createError(
       "New password and confirm password do not match"
     );
   }
 
-  // Apply the original PHP password requirements.
   validatePassword(newPassword);
 
-  // Prevent reusing the current password.
   if (currentPassword === newPassword) {
     throw createError(
       "New password must be different from current password"
@@ -225,7 +220,6 @@ const changeUserPassword = async ({
   try {
     await connection.beginTransaction();
 
-    // Lock the user record while changing the password.
     const [users] = await connection.execute(
       `SELECT user_id, password
        FROM user_login
@@ -241,7 +235,6 @@ const changeUserPassword = async ({
 
     const user = users[0];
 
-    // Verify the existing password.
     const passwordMatches = await bcrypt.compare(
       currentPassword,
       user.password
@@ -254,7 +247,6 @@ const changeUserPassword = async ({
       );
     }
 
-    // Generate the new password hash.
     const newPasswordHash = await bcrypt.hash(
       newPassword,
       BCRYPT_SALT_ROUNDS
@@ -262,7 +254,8 @@ const changeUserPassword = async ({
 
     await connection.execute(
       `UPDATE user_login
-       SET password = ?
+       SET password = ?,
+           token_version = token_version + 1
        WHERE user_id = ?`,
       [
         newPasswordHash,

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 /**
@@ -7,12 +6,24 @@ import { z } from "zod";
  * immediate client-side feedback.
  */
 
+// bcrypt only uses the first 72 UTF-8 bytes of a password. Keep the
+// browser-side policy aligned with the backend to avoid accepting a value
+// in the UI that the API will reject (or that bcrypt would truncate).
+export const MAX_PASSWORD_BYTES = 72;
+
+const getUtf8ByteLength = (value: string): number =>
+  new TextEncoder().encode(value).length;
+
 export const passwordSchema = z
   .string()
   .min(8, "Use at least 8 characters")
   .regex(/[A-Z]/, "Include at least one uppercase letter")
   .regex(/[0-9]/, "Include at least one number")
-  .regex(/[^A-Za-z0-9]/, "Include at least one special character");
+  .regex(/[^A-Za-z0-9]/, "Include at least one special character")
+  .refine(
+    (value) => getUtf8ByteLength(value) <= MAX_PASSWORD_BYTES,
+    `Use no more than ${MAX_PASSWORD_BYTES} UTF-8 bytes`,
+  );
 
 /**
  * Login accepts either an email address or an Indian mobile number.

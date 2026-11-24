@@ -471,7 +471,7 @@ const createFamily = async ({
 
     await connection.commit();
 
-    return await getFamilyById(familyId);
+    return await getFamilyByIdInternal(familyId, true);
 
   } catch (error) {
     await rollbackSafely(connection);
@@ -483,46 +483,67 @@ const createFamily = async ({
 };
 
 // ==========================================
-// 2. GET ALL FAMILIES
+// FAMILY READ AUTHORIZATION HELPERS
 // ==========================================
 
-const getAllFamilies = async () => {
-  const [families] = await db.execute(
-    `SELECT
-       f.Family_Id AS familyId,
-       f.Reference_Id AS referenceId,
-       f.Family_Name AS familyName,
-       f.Native_Place AS nativePlace,
-       f.Head_DOB AS headDob,
-       f.Gotra_Id AS gotraId,
-       g.Gotra_Name AS gotraName,
-       f.Created_At AS createdAt,
-       (
-         SELECT COUNT(*)
-         FROM person p
-         WHERE p.Family_Id = f.Family_Id
-       ) AS totalMembers,
-       (
-         SELECT CONCAT_WS(' ', hp.First_Name, hp.Last_Name)
-         FROM person hp
-         WHERE hp.Family_Id = f.Family_Id
-         ORDER BY hp.Person_Id ASC
-         LIMIT 1
-       ) AS headPersonName
-     FROM family f
-     LEFT JOIN gothra g
-       ON g.Gotra_Id = f.Gotra_Id
-     ORDER BY f.Family_Id DESC`
-  );
+const normalizeReadAccess = (accessContext) => {
+  if (!accessContext || typeof accessContext !== "object") {
+    throw createError(
+      "Family access context is required for family reads.",
+      500
+    );
+  }
 
-  return families;
+  if (accessContext.role === "Admin" && accessContext.isGlobal === true) {
+    return {
+      isGlobal: true,
+      familyIds: null,
+      personIds: null
+    };
+  }
+
+  if (accessContext.role !== "User" || accessContext.isGlobal === true) {
+    throw createError(
+      "A valid family access context is required.",
+      403
+    );
+  }
+
+  const familyIds = [
+    ...new Set(
+      (Array.isArray(accessContext.familyIds) ? accessContext.familyIds : [])
+        .map(Number)
+        .filter((id) => Number.isSafeInteger(id) && id > 0)
+    )
+  ];
+
+  const personIds = [
+    ...new Set(
+      (Array.isArray(accessContext.extendedPersonIds)
+        ? accessContext.extendedPersonIds
+        : [])
+        .map(Number)
+        .filter((id) => Number.isSafeInteger(id) && id > 0)
+    )
+  ];
+
+  return {
+    isGlobal: false,
+    familyIds,
+    personIds
+  };
 };
 
+const createPlaceholders = (count) =>
+  Array.from({ length: count }, () => "?").join(",");
+
+const FAMILY_READ_BATCH_SIZE = 500;
+
 // ==========================================
-// 3. GET FAMILY BY ID
+// INTERNAL GET FAMILY BY ID
 // ==========================================
 
-const getFamilyById = async (familyId) => {
+const getFamilyByIdInternal = async (familyId, includePrivate) => {
   const id = nullableId(familyId, "Family ID");
 
   if (!id) {
@@ -551,10 +572,10 @@ const getFamilyById = async (familyId) => {
     throw createError("Family not found", 404);
   }
 
-  // The original application uses the earliest Person_Id
-  // as the initial family head.
-  const [headPeople] = await db.execute(
-    `SELECT
+  // Admin can retain the original head-person fields.
+  // Ordinary Users receive only non-confidential fields.
+  const headPersonSelect = includePrivate
+    ? `
        Person_Id AS personId,
        First_Name AS firstName,
        Last_Name AS lastName,
@@ -574,6 +595,27 @@ const getFamilyById = async (familyId) => {
        Mane_Devru_Id AS maneDevruId,
        Kula_Devatha_Id AS kulaDevathaId,
        Pooja_Vruksha_Id AS poojaVrukshaId
+    `
+    : `
+       Person_Id AS personId,
+       First_Name AS firstName,
+       Last_Name AS lastName,
+       father_name AS fatherName,
+       mother_name AS motherName,
+       Gender AS gender,
+       DOB AS dob,
+       Original_Native AS originalNative,
+       Gotra_Id AS gotraId,
+       Sutra_Id AS sutraId,
+       Panchang_Sudhi_Id AS panchangSudhiId,
+       Vamsha_Id AS vamshaId,
+       Mane_Devru_Id AS maneDevruId,
+       Kula_Devatha_Id AS kulaDevathaId,
+       Pooja_Vruksha_Id AS poojaVrukshaId
+    `;
+
+  const [headPeople] = await db.execute(
+    `SELECT ${headPersonSelect}
      FROM person
      WHERE Family_Id = ?
      ORDER BY Person_Id ASC
@@ -593,6 +635,140 @@ const getFamilyById = async (familyId) => {
     totalMembers: Number(countRows[0].totalMembers),
     headPerson: headPeople[0] || null
   };
+};
+
+// ==========================================
+// 2. GET ALL FAMILIES
+// ==========================================
+
+const getAllFamilies = async ({ accessContext } = {}) => {
+  const access = normalizeReadAccess(accessContext);
+
+  if (access.isGlobal) {
+    const [families] = await db.execute(
+      `SELECT
+         f.Family_Id AS familyId,
+         f.Reference_Id AS referenceId,
+         f.Family_Name AS familyName,
+         f.Native_Place AS nativePlace,
+         f.Head_DOB AS headDob,
+         f.Gotra_Id AS gotraId,
+         g.Gotra_Name AS gotraName,
+         f.Created_At AS createdAt,
+         (
+           SELECT COUNT(*)
+           FROM person p
+           WHERE p.Family_Id = f.Family_Id
+         ) AS totalMembers,
+         (
+           SELECT CONCAT_WS(' ', hp.First_Name, hp.Last_Name)
+           FROM person hp
+           WHERE hp.Family_Id = f.Family_Id
+           ORDER BY hp.Person_Id ASC
+           LIMIT 1
+         ) AS headPersonName
+       FROM family f
+       LEFT JOIN gothra g
+         ON g.Gotra_Id = f.Gotra_Id
+       ORDER BY f.Family_Id DESC`
+    );
+
+    return families;
+  }
+
+  if (access.familyIds.length === 0) {
+    return [];
+  }
+
+  const resultById = new Map();
+
+  for (
+    let index = 0;
+    index < access.familyIds.length;
+    index += FAMILY_READ_BATCH_SIZE
+  ) {
+    const batch = access.familyIds.slice(
+      index,
+      index + FAMILY_READ_BATCH_SIZE
+    );
+
+    const [families] = await db.execute(
+      `SELECT
+         f.Family_Id AS familyId,
+         f.Reference_Id AS referenceId,
+         f.Family_Name AS familyName,
+         f.Native_Place AS nativePlace,
+         f.Head_DOB AS headDob,
+         f.Gotra_Id AS gotraId,
+         g.Gotra_Name AS gotraName,
+         f.Created_At AS createdAt,
+         (
+           SELECT COUNT(*)
+           FROM person p
+           WHERE p.Family_Id = f.Family_Id
+         ) AS totalMembers,
+         (
+           SELECT CONCAT_WS(' ', hp.First_Name, hp.Last_Name)
+           FROM person hp
+           WHERE hp.Family_Id = f.Family_Id
+           ORDER BY hp.Person_Id ASC
+           LIMIT 1
+         ) AS headPersonName
+       FROM family f
+       LEFT JOIN gothra g
+         ON g.Gotra_Id = f.Gotra_Id
+       WHERE f.Family_Id IN (${createPlaceholders(batch.length)})
+       ORDER BY f.Family_Id DESC`,
+      batch
+    );
+
+    for (const family of families) {
+      resultById.set(Number(family.familyId), family);
+    }
+  }
+
+  return [...resultById.values()].sort(
+    (a, b) => Number(b.familyId) - Number(a.familyId)
+  );
+};
+
+// ==========================================
+// 3. GET FAMILY BY ID
+// ==========================================
+
+const getFamilyById = async (familyId, { accessContext } = {}) => {
+  const id = nullableId(familyId, "Family ID");
+
+  if (!id) {
+    throw createError("Valid family ID is required");
+  }
+
+  const access = normalizeReadAccess(accessContext);
+
+  if (!access.isGlobal) {
+    if (!access.familyIds.includes(id)) {
+      // Do not disclose whether an unrelated family exists.
+      throw createError("Family not found", 404);
+    }
+  }
+
+  const family = await getFamilyByIdInternal(
+    id,
+    access.isGlobal
+  );
+
+  if (!access.isGlobal && family.headPerson) {
+    const headPersonId = Number(family.headPerson.personId);
+
+    // The entire family ID is authorized, but only expose a
+    // head-person profile if that person is part of the computed
+    // extended-person scope.
+    if (!access.personIds.includes(headPersonId)) {
+      family.headPerson = null;
+    }
+  }
+
+  return family;
 };
 
 // ==========================================
@@ -736,7 +912,7 @@ const updateFamily = async ({
 
     await connection.commit();
 
-    return await getFamilyById(id);
+    return await getFamilyByIdInternal(id, true);
 
   } catch (error) {
     await rollbackSafely(connection);
