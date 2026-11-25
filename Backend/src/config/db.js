@@ -1,3 +1,6 @@
+
+"use strict";
+
 const mysql = require("mysql2/promise");
 require("dotenv").config();
 
@@ -8,14 +11,14 @@ const db = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
 
-  // Preserve SQL DATE values as YYYY-MM-DD strings.
-  // This prevents date-only values from shifting because of timezone conversion.
   dateStrings: ["DATE"],
 
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+
   enableKeepAlive: true,
+  connectTimeout: 10000,
 });
 
 module.exports = db;

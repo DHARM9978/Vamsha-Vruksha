@@ -1,6 +1,13 @@
 
+"use strict";
+
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
+
+const {
+  validatePassword,
+  MAX_PASSWORD_BYTES,
+} = require("../utils/password");
 
 // ==========================================
 // CONFIGURATION
@@ -9,7 +16,7 @@ const bcrypt = require("bcryptjs");
 const BCRYPT_SALT_ROUNDS = 12;
 
 // ==========================================
-// COMMON HELPER
+// COMMON HELPERS
 // ==========================================
 
 const createError = (message, statusCode = 400) => {
@@ -18,22 +25,21 @@ const createError = (message, statusCode = 400) => {
   return error;
 };
 
-// Keep the self-service password policy aligned with auth.service.js
-// and auth.validator.js. bcrypt processes at most 72 UTF-8 bytes.
-const MAX_PASSWORD_BYTES = 72;
+const normalizeUserId = (userId) => {
+  const id = Number(userId);
 
-const validatePassword = (password) => {
-  if (
-    typeof password !== "string" ||
-    password.length < 8 ||
-    Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES ||
-    !/[A-Z]/.test(password) ||
-    !/[0-9]/.test(password) ||
-    !/[^A-Za-z0-9]/.test(password)
-  ) {
-    throw createError(
-      "Password must contain at least 8 characters, one uppercase letter, one number and one special character, and must not exceed 72 UTF-8 bytes"
-    );
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw createError("Invalid user account ID");
+  }
+
+  return id;
+};
+
+const rollbackSafely = async (connection) => {
+  try {
+    await connection.rollback();
+  } catch (error) {
+    // Preserve the original error.
   }
 };
 
@@ -42,6 +48,8 @@ const validatePassword = (password) => {
 // ==========================================
 
 const getUserProfile = async (userId) => {
+  const id = normalizeUserId(userId);
+
   const [users] = await db.execute(
     `SELECT
        user_id,
@@ -54,11 +62,14 @@ const getUserProfile = async (userId) => {
      FROM user_login
      WHERE user_id = ?
      LIMIT 1`,
-    [userId]
+    [id]
   );
 
   if (users.length === 0) {
-    throw createError("User account not found", 404);
+    throw createError(
+      "User account not found",
+      404
+    );
   }
 
   const user = users[0];
@@ -70,7 +81,7 @@ const getUserProfile = async (userId) => {
     phone: user.user_phone_number,
     role: user.role,
     isVerified: Number(user.is_verified) === 1,
-    createdAt: user.created_at
+    createdAt: user.created_at,
   };
 };
 
@@ -81,8 +92,10 @@ const getUserProfile = async (userId) => {
 const updateUserProfile = async ({
   userId,
   userName,
-  phone
+  phone,
 }) => {
+  const id = normalizeUserId(userId);
+
   const normalizedName =
     typeof userName === "string"
       ? userName.trim()
@@ -103,6 +116,7 @@ const updateUserProfile = async ({
     );
   }
 
+  // user_phone_number is VARCHAR(15).
   if (
     normalizedPhone &&
     !/^[0-9]{7,15}$/.test(normalizedPhone)
@@ -123,22 +137,29 @@ const updateUserProfile = async ({
        WHERE user_id = ?
        LIMIT 1
        FOR UPDATE`,
-      [userId]
+      [id]
     );
 
     if (users.length === 0) {
-      throw createError("User account not found", 404);
+      throw createError(
+        "User account not found",
+        404
+      );
     }
 
     if (normalizedPhone) {
-      const [existingPhone] = await connection.execute(
-        `SELECT user_id
-         FROM user_login
-         WHERE user_phone_number = ?
-           AND user_id <> ?
-         LIMIT 1`,
-        [normalizedPhone, userId]
-      );
+      const [existingPhone] =
+        await connection.execute(
+          `SELECT user_id
+           FROM user_login
+           WHERE user_phone_number = ?
+             AND user_id <> ?
+           LIMIT 1`,
+          [
+            normalizedPhone,
+            id,
+          ]
+        );
 
       if (existingPhone.length > 0) {
         throw createError(
@@ -156,19 +177,20 @@ const updateUserProfile = async ({
       [
         normalizedName,
         normalizedPhone,
-        userId
+        id,
       ]
     );
 
     await connection.commit();
 
-    return await getUserProfile(userId);
-
   } catch (error) {
-    try {
-      await connection.rollback();
-    } catch (rollbackError) {
-      // Preserve the original error.
+    await rollbackSafely(connection);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      throw createError(
+        "Phone number is already registered",
+        409
+      );
     }
 
     throw error;
@@ -176,6 +198,8 @@ const updateUserProfile = async ({
   } finally {
     connection.release();
   }
+
+  return getUserProfile(id);
 };
 
 // ==========================================
@@ -186,8 +210,11 @@ const changeUserPassword = async ({
   userId,
   currentPassword,
   newPassword,
-  confirmPassword
+  confirmPassword,
 }) => {
+  const id = normalizeUserId(userId);
+
+  // Validate required fields.
   if (
     typeof currentPassword !== "string" ||
     !currentPassword ||
@@ -201,12 +228,32 @@ const changeUserPassword = async ({
     );
   }
 
+  // bcrypt processes at most 72 UTF-8 bytes.
+  if (
+    Buffer.byteLength(currentPassword, "utf8") >
+    MAX_PASSWORD_BYTES
+  ) {
+    throw createError(
+      "Current password exceeds the maximum allowed length"
+    );
+  }
+
+  if (
+    Buffer.byteLength(confirmPassword, "utf8") >
+    MAX_PASSWORD_BYTES
+  ) {
+    throw createError(
+      "Confirm password exceeds the maximum allowed length"
+    );
+  }
+
   if (newPassword !== confirmPassword) {
     throw createError(
       "New password and confirm password do not match"
     );
   }
 
+  // Shared password policy.
   validatePassword(newPassword);
 
   if (currentPassword === newPassword) {
@@ -220,21 +267,28 @@ const changeUserPassword = async ({
   try {
     await connection.beginTransaction();
 
+    // Lock the account to prevent concurrent password changes.
     const [users] = await connection.execute(
-      `SELECT user_id, password
+      `SELECT
+         user_id,
+         password
        FROM user_login
        WHERE user_id = ?
        LIMIT 1
        FOR UPDATE`,
-      [userId]
+      [id]
     );
 
     if (users.length === 0) {
-      throw createError("User account not found", 404);
+      throw createError(
+        "User account not found",
+        404
+      );
     }
 
     const user = users[0];
 
+    // Verify the existing password.
     const passwordMatches = await bcrypt.compare(
       currentPassword,
       user.password
@@ -247,11 +301,13 @@ const changeUserPassword = async ({
       );
     }
 
+    // Hash the new password.
     const newPasswordHash = await bcrypt.hash(
       newPassword,
       BCRYPT_SALT_ROUNDS
     );
 
+    // Increment token_version to invalidate existing JWTs.
     await connection.execute(
       `UPDATE user_login
        SET password = ?,
@@ -259,7 +315,7 @@ const changeUserPassword = async ({
        WHERE user_id = ?`,
       [
         newPasswordHash,
-        userId
+        id,
       ]
     );
 
@@ -267,16 +323,11 @@ const changeUserPassword = async ({
 
     return {
       message:
-        "Password changed successfully. Please log in again."
+        "Password changed successfully. Please log in again.",
     };
 
   } catch (error) {
-    try {
-      await connection.rollback();
-    } catch (rollbackError) {
-      // Preserve the original error.
-    }
-
+    await rollbackSafely(connection);
     throw error;
 
   } finally {
@@ -291,5 +342,5 @@ const changeUserPassword = async ({
 module.exports = {
   getUserProfile,
   updateUserProfile,
-  changeUserPassword
+  changeUserPassword,
 };

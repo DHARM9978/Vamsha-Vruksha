@@ -1,8 +1,14 @@
+"use strict";
 
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const logger = require("../utils/logger");
+
+const {
+  validatePassword,
+  MAX_PASSWORD_BYTES,
+} = require("../utils/password");
 
 const {
   generateOtp,
@@ -52,13 +58,10 @@ const normalizeAdminId = (value) => {
   return id;
 };
 
-const validateEmailAddress = (email) => {
-  return (
-    typeof email === "string" &&
-    email.length <= 150 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  );
-};
+const validateEmailAddress = (email) =>
+  typeof email === "string" &&
+  email.length <= 150 &&
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const getOtpExpiryMinutes = () => {
   const minutes = Number(
@@ -89,7 +92,8 @@ const deletePendingEmailRequest = async (
   try {
     await db.execute(
       `DELETE FROM admin_email_change_requests
-       WHERE request_id = ? AND user_id = ?`,
+       WHERE request_id = ?
+         AND user_id = ?`,
       [requestId, adminId]
     );
   } catch (error) {
@@ -113,7 +117,13 @@ const validateAdminDetails = ({
   phone,
   password,
 }) => {
-  if (!userName || !email || !phone || !password) {
+  if (
+    !userName ||
+    !email ||
+    !phone ||
+    typeof password !== "string" ||
+    !password
+  ) {
     throw createError(
       "Name, email, mobile number and password are required"
     );
@@ -137,16 +147,8 @@ const validateAdminDetails = ({
     );
   }
 
-  if (
-    typeof password !== "string" ||
-    password.length < 8 ||
-    !/[A-Z]/.test(password) ||
-    !/[0-9]/.test(password)
-  ) {
-    throw createError(
-      "Password must contain at least 8 characters, one uppercase letter and one number"
-    );
-  }
+  // Use the same password policy as User accounts.
+  validatePassword(password);
 };
 
 // ======================================================
@@ -165,10 +167,16 @@ const loginAdmin = async ({
   if (
     !loginIdentifier ||
     typeof password !== "string" ||
-    !password
+    password.length === 0
   ) {
     throw createError(
       "Email/phone number and password are required"
+    );
+  }
+
+  if (Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES) {
+    throw createError(
+      "Password must not exceed 72 UTF-8 bytes"
     );
   }
 
@@ -187,7 +195,10 @@ const loginAdmin = async ({
        is_verified,
        token_version
      FROM user_login
-     WHERE (user_email = ? OR user_phone_number = ?)
+     WHERE (
+       user_email = ?
+       OR user_phone_number = ?
+     )
        AND role = 'Admin'
      LIMIT 1`,
     [
@@ -244,6 +255,7 @@ const loginAdmin = async ({
     },
     process.env.JWT_SECRET,
     {
+      algorithm: "HS256",
       expiresIn: process.env.JWT_EXPIRES_IN || "1d",
     }
   );
@@ -286,7 +298,6 @@ const createAdmin = async ({
   try {
     await connection.beginTransaction();
 
-    // Check duplicate email and mobile number.
     const [existingAccounts] =
       await connection.execute(
         `SELECT
@@ -307,7 +318,8 @@ const createAdmin = async ({
     if (existingAccounts.length > 0) {
       const emailExists = existingAccounts.some(
         (account) =>
-          normalizeEmail(account.user_email) === normalizedEmail
+          normalizeEmail(account.user_email) ===
+          normalizedEmail
       );
 
       const phoneExists = existingAccounts.some(
@@ -439,6 +451,122 @@ const getAdminProfile = async (adminId) => {
 };
 
 // ======================================================
+// 4. CHANGE AUTHENTICATED ADMIN PASSWORD
+// ======================================================
+
+const changeAdminPassword = async ({
+  adminId,
+  currentPassword,
+  newPassword,
+  confirmPassword,
+}) => {
+  const id = normalizeAdminId(adminId);
+
+  if (
+    typeof currentPassword !== "string" ||
+    currentPassword.length === 0 ||
+    typeof newPassword !== "string" ||
+    newPassword.length === 0 ||
+    typeof confirmPassword !== "string" ||
+    confirmPassword.length === 0
+  ) {
+    throw createError(
+      "Current password, new password and confirmation password are required"
+    );
+  }
+
+  if (
+    Buffer.byteLength(currentPassword, "utf8") > MAX_PASSWORD_BYTES ||
+    Buffer.byteLength(confirmPassword, "utf8") > MAX_PASSWORD_BYTES
+  ) {
+    throw createError(
+      "Current and confirmation passwords must not exceed 72 UTF-8 bytes"
+    );
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw createError(
+      "New password and confirmation password do not match"
+    );
+  }
+
+  validatePassword(newPassword);
+
+  if (currentPassword === newPassword) {
+    throw createError(
+      "New password must be different from current password"
+    );
+  }
+
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [admins] = await connection.execute(
+      `SELECT
+         user_id,
+         password,
+         role,
+         is_verified
+       FROM user_login
+       WHERE user_id = ?
+       LIMIT 1
+       FOR UPDATE`,
+      [id]
+    );
+
+    if (admins.length === 0 || admins[0].role !== "Admin") {
+      throw createError("Admin account not found", 404);
+    }
+
+    const admin = admins[0];
+
+    if (Number(admin.is_verified) !== 1) {
+      throw createError("Admin account is not verified", 403);
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      currentPassword,
+      admin.password
+    );
+
+    if (!passwordMatches) {
+      throw createError("Current password is incorrect", 401);
+    }
+
+    const newPasswordHash = await bcrypt.hash(
+      newPassword,
+      BCRYPT_SALT_ROUNDS
+    );
+
+    const [updateResult] = await connection.execute(
+      `UPDATE user_login
+       SET password = ?,
+           token_version = token_version + 1
+       WHERE user_id = ?
+         AND role = 'Admin'`,
+      [newPasswordHash, id]
+    );
+
+    if (updateResult.affectedRows !== 1) {
+      throw createError("Admin password could not be updated", 409);
+    }
+
+    await connection.commit();
+
+    return {
+      message: "Admin password changed successfully. Please log in again.",
+    };
+  } catch (error) {
+    await rollbackSafely(connection);
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+// ======================================================
 // 4. REQUEST ADMIN EMAIL CHANGE
 // ======================================================
 
@@ -465,24 +593,21 @@ const requestAdminEmailChange = async ({
     );
   }
 
+  if (Buffer.byteLength(currentPassword, "utf8") > MAX_PASSWORD_BYTES) {
+    throw createError(
+      "Current password must not exceed 72 UTF-8 bytes"
+    );
+  }
+
   const expiryMinutes = getOtpExpiryMinutes();
-
-  const otp = generateOtp();
-
-  const otpHash = hashOtp(
-    otp,
-    normalizedNewEmail,
-    OTP_PURPOSE
-  );
-
   const connection = await db.getConnection();
 
   let requestId;
+  let otp;
 
   try {
     await connection.beginTransaction();
 
-    // Retrieve and lock authenticated Admin.
     const [admins] = await connection.execute(
       `SELECT
          user_id,
@@ -516,7 +641,6 @@ const requestAdminEmailChange = async ({
       );
     }
 
-    // Verify current Admin password.
     const passwordMatches = await bcrypt.compare(
       currentPassword,
       admin.password
@@ -539,15 +663,51 @@ const requestAdminEmailChange = async ({
       );
     }
 
-    // Remove expired email reservations.
+    // Remove expired email-change reservations.
     await connection.execute(
       `DELETE FROM admin_email_change_requests
        WHERE expires_at <= NOW()`
     );
 
-    // ==============================================
-    // CHECK 1: EXISTING USER_LOGIN EMAIL
-    // ==============================================
+    const [pendingRequests] =
+      await connection.execute(
+        `SELECT
+           request_id,
+           COALESCE(
+             TIMESTAMPDIFF(
+               SECOND,
+               last_sent_at,
+               NOW()
+             ),
+             0
+           ) AS elapsed_seconds
+         FROM admin_email_change_requests
+         WHERE user_id = ?
+         LIMIT 1
+         FOR UPDATE`,
+        [id]
+      );
+
+    if (pendingRequests.length > 0) {
+      const elapsedSeconds = Number(
+        pendingRequests[0].elapsed_seconds
+      );
+
+      if (
+        elapsedSeconds < OTP_RESEND_COOLDOWN_SECONDS
+      ) {
+        const remainingSeconds =
+          OTP_RESEND_COOLDOWN_SECONDS - elapsedSeconds;
+
+        const error = createError(
+          `Please wait ${remainingSeconds} seconds before requesting another OTP.`,
+          429
+        );
+
+        error.retryAfterSeconds = remainingSeconds;
+        throw error;
+      }
+    }
 
     const [existingAccounts] =
       await connection.execute(
@@ -570,10 +730,6 @@ const requestAdminEmailChange = async ({
       );
     }
 
-    // ==============================================
-    // CHECK 2: OTHER PENDING EMAIL REQUESTS
-    // ==============================================
-
     const [existingRequests] =
       await connection.execute(
         `SELECT request_id
@@ -595,40 +751,46 @@ const requestAdminEmailChange = async ({
       );
     }
 
-    // Remove previous pending request for this Admin.
+    // Replace the previous request after cooldown.
     await connection.execute(
       `DELETE FROM admin_email_change_requests
        WHERE user_id = ?`,
       [id]
     );
 
-    // Create new pending verification request.
-    const [insertResult] =
-      await connection.execute(
-        `INSERT INTO admin_email_change_requests
-         (
-           user_id,
-           old_email,
-           new_email,
-           otp_hash,
-           expires_at,
-           attempts,
-           last_sent_at
-         )
-         VALUES (
-           ?, ?, ?, ?,
-           DATE_ADD(NOW(), INTERVAL ? MINUTE),
-           0,
-           NOW()
-         )`,
-        [
-          id,
-          oldEmail,
-          normalizedNewEmail,
-          otpHash,
-          expiryMinutes,
-        ]
-      );
+    otp = generateOtp();
+
+    const otpHash = hashOtp(
+      otp,
+      normalizedNewEmail,
+      OTP_PURPOSE
+    );
+
+    const [insertResult] = await connection.execute(
+      `INSERT INTO admin_email_change_requests
+       (
+         user_id,
+         old_email,
+         new_email,
+         otp_hash,
+         expires_at,
+         attempts,
+         last_sent_at
+       )
+       VALUES (
+         ?, ?, ?, ?,
+         DATE_ADD(NOW(), INTERVAL ? MINUTE),
+         0,
+         NOW()
+       )`,
+      [
+        id,
+        oldEmail,
+        normalizedNewEmail,
+        otpHash,
+        expiryMinutes,
+      ]
+    );
 
     requestId = insertResult.insertId;
 
@@ -639,7 +801,7 @@ const requestAdminEmailChange = async ({
 
     if (error.code === "ER_DUP_ENTRY") {
       throw createError(
-        "This email address is already registered or reserved. Please use another email address.",
+        "Email address is already registered or reserved. Please use another email address.",
         409
       );
     }
@@ -650,9 +812,7 @@ const requestAdminEmailChange = async ({
     connection.release();
   }
 
-  // Send OTP after saving the pending request.
-  // user_login email is NOT changed here.
-
+  // Send OTP after committing the pending request.
   try {
     await sendOtpEmail({
       email: normalizedNewEmail,
@@ -702,7 +862,6 @@ const requestAdminEmailChange = async ({
 
 const resendAdminEmailChangeOtp = async (adminId) => {
   const id = normalizeAdminId(adminId);
-
   const expiryMinutes = getOtpExpiryMinutes();
 
   const connection = await db.getConnection();
@@ -775,7 +934,6 @@ const resendAdminEmailChangeOtp = async (adminId) => {
     requestId = request.request_id;
     newEmail = normalizeEmail(request.new_email);
 
-    // Confirm the old email is still unchanged.
     if (
       normalizeEmail(admins[0].user_email) !==
       normalizeEmail(request.old_email)
@@ -795,7 +953,6 @@ const resendAdminEmailChangeOtp = async (adminId) => {
       );
     }
 
-    // Enforce resend cooldown.
     const elapsedSeconds = Number(
       request.elapsed_seconds || 0
     );
@@ -812,11 +969,9 @@ const resendAdminEmailChangeOtp = async (adminId) => {
       );
 
       error.retryAfterSeconds = remainingSeconds;
-
       throw error;
     }
 
-    // Check email availability again.
     const [existingAccounts] =
       await connection.execute(
         `SELECT user_id
@@ -847,7 +1002,6 @@ const resendAdminEmailChangeOtp = async (adminId) => {
       );
     }
 
-    // Generate a new OTP.
     otp = generateOtp();
 
     const otpHash = hashOtp(
@@ -856,7 +1010,6 @@ const resendAdminEmailChangeOtp = async (adminId) => {
       OTP_PURPOSE
     );
 
-    // Old OTP becomes invalid.
     await connection.execute(
       `UPDATE admin_email_change_requests
        SET
@@ -891,7 +1044,6 @@ const resendAdminEmailChangeOtp = async (adminId) => {
     connection.release();
   }
 
-  // Deliver the new OTP.
   try {
     await sendOtpEmail({
       email: newEmail,
@@ -1027,7 +1179,6 @@ const verifyAdminEmailChangeOtp = async ({
       request.new_email
     );
 
-    // Make sure the old email is still the current email.
     if (
       normalizeEmail(admin.user_email) !== oldEmail
     ) {
@@ -1046,14 +1197,12 @@ const verifyAdminEmailChangeOtp = async ({
       );
     }
 
-    // Check expiry.
     if (Number(request.is_expired) === 1) {
       throw createError(
         "Verification code has expired. Please request a new code."
       );
     }
 
-    // Check maximum attempts.
     const attempts = Number(request.attempts);
 
     if (attempts >= MAX_OTP_ATTEMPTS) {
@@ -1072,7 +1221,6 @@ const verifyAdminEmailChangeOtp = async ({
       );
     }
 
-    // Verify HMAC-SHA256 OTP.
     const isValidOtp = verifyOtpHash(
       normalizedOtp,
       newEmail,
@@ -1102,7 +1250,6 @@ const verifyAdminEmailChangeOtp = async ({
         );
       }
 
-      // Save incorrect attempt before returning the error.
       await connection.commit();
       transactionCommitted = true;
 
@@ -1119,10 +1266,7 @@ const verifyAdminEmailChangeOtp = async ({
       );
     }
 
-    // ==============================================
-    // FINAL DUPLICATE EMAIL CHECK
-    // ==============================================
-
+    // Final duplicate email check.
     const [existingAccounts] =
       await connection.execute(
         `SELECT user_id
@@ -1153,10 +1297,17 @@ const verifyAdminEmailChangeOtp = async ({
       );
     }
 
-    // ==============================================
-    // UPDATE EMAIL ONLY AFTER OTP SUCCESS
-    // ==============================================
+    // The otp_verification.user_email foreign key references
+    // user_login.user_email without ON UPDATE CASCADE. Remove OTPs tied
+    // to the old address before changing the parent email. This also
+    // invalidates any signup/password-reset OTPs issued to the old address.
+    await connection.execute(
+      `DELETE FROM otp_verification
+       WHERE user_email = ?`,
+      [oldEmail]
+    );
 
+    // Update email and invalidate all existing JWTs.
     const [updateResult] = await connection.execute(
       `UPDATE user_login
        SET user_email = ?,
@@ -1176,7 +1327,7 @@ const verifyAdminEmailChangeOtp = async ({
       );
     }
 
-    // Delete pending request so OTP cannot be reused.
+    // Consume OTP so it cannot be reused.
     await connection.execute(
       `DELETE FROM admin_email_change_requests
        WHERE request_id = ?
@@ -1187,7 +1338,6 @@ const verifyAdminEmailChangeOtp = async ({
       ]
     );
 
-    // Commit email update and OTP deletion together.
     await connection.commit();
     transactionCommitted = true;
 
@@ -1232,7 +1382,7 @@ module.exports = {
   loginAdmin,
   createAdmin,
   getAdminProfile,
-
+  changeAdminPassword,
   requestAdminEmailChange,
   resendAdminEmailChangeOtp,
   verifyAdminEmailChangeOtp,

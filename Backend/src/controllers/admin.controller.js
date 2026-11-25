@@ -116,6 +116,27 @@ const getAdminProfile = handle(async (req, res) => {
 });
 
 // ======================================================
+// 4. CHANGE AUTHENTICATED ADMIN PASSWORD
+// PATCH /api/admin/change-password
+// ======================================================
+
+const changeAdminPassword = handle(async (req, res) => {
+  const result = await adminService.changeAdminPassword({
+    adminId: req.user.userId,
+    currentPassword: req.body?.currentPassword,
+    newPassword: req.body?.newPassword,
+    confirmPassword: req.body?.confirmPassword,
+  });
+
+  setPrivateResponseHeaders(res);
+
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
+
+// ======================================================
 // 4. REQUEST ADMIN EMAIL CHANGE
 // POST /api/admin/email-change/request
 // ======================================================
@@ -186,6 +207,7 @@ module.exports = {
   loginAdmin,
   createAdmin,
   getAdminProfile,
+  changeAdminPassword,
   requestAdminEmailChange,
   resendAdminEmailChangeOtp,
   verifyAdminEmailChangeOtp,

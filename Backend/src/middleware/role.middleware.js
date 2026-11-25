@@ -1,4 +1,6 @@
 
+"use strict";
+
 const authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -15,8 +17,10 @@ const authorizeRoles = (...allowedRoles) => {
       });
     }
 
-    next();
+    return next();
   };
 };
 
+// Supports both default and named imports.
 module.exports = authorizeRoles;
+module.exports.authorizeRole = authorizeRoles;

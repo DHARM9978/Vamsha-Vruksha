@@ -1,8 +1,14 @@
+
+"use strict";
+
 const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 const asyncHandler = require("../utils/asyncHandler");
 
-const unauthorized = (res, message = "Invalid or expired authentication token") => {
+const unauthorized = (
+  res,
+  message = "Invalid or expired authentication token"
+) => {
   return res.status(401).json({
     success: false,
     message,
@@ -10,29 +16,64 @@ const unauthorized = (res, message = "Invalid or expired authentication token") 
 };
 
 const authenticate = asyncHandler(async (req, res, next) => {
+  // ======================================================
+  // 1. EXTRACT BEARER TOKEN
+  // ======================================================
+
   const authorization = req.headers.authorization;
 
   if (typeof authorization !== "string") {
-    return unauthorized(res, "Authentication token is required");
+    return unauthorized(
+      res,
+      "Authentication token is required"
+    );
   }
 
   const match = authorization.match(/^Bearer\s+(.+)$/i);
   const token = match?.[1]?.trim();
 
   if (!token) {
-    return unauthorized(res, "Authentication token is missing");
+    return unauthorized(
+      res,
+      "Authentication token is missing"
+    );
   }
 
-  if (!process.env.JWT_SECRET) {
-    const error = new Error("JWT_SECRET is not configured");
+  // Reject excessively large tokens.
+  if (token.length > 8192) {
+    return unauthorized(res);
+  }
+
+  // ======================================================
+  // 2. VALIDATE JWT SECRET CONFIGURATION
+  // ======================================================
+
+  if (
+    typeof process.env.JWT_SECRET !== "string" ||
+    !process.env.JWT_SECRET.trim()
+  ) {
+    const error = new Error(
+      "JWT_SECRET is not configured"
+    );
+
     error.statusCode = 500;
     throw error;
   }
 
+  // ======================================================
+  // 3. VERIFY JWT
+  // ======================================================
+
   let decoded;
 
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET,
+      {
+        algorithms: ["HS256"],
+      }
+    );
   } catch (error) {
     if (
       error.name === "TokenExpiredError" ||
@@ -45,12 +86,31 @@ const authenticate = asyncHandler(async (req, res, next) => {
     throw error;
   }
 
-  // Require all claims issued by the updated login service.
-  // Tokens issued before token_version deployment are intentionally rejected.
-  const userId = Number(decoded?.userId);
-  const tokenVersion = decoded?.tokenVersion;
-  const tokenRole = decoded?.role;
+  // ======================================================
+  // 4. VALIDATE JWT PAYLOAD
+  // ======================================================
 
+  if (
+    !decoded ||
+    typeof decoded !== "object" ||
+    Array.isArray(decoded)
+  ) {
+    return unauthorized(res);
+  }
+
+  const userId = Number(decoded.userId);
+  const tokenVersion = decoded.tokenVersion;
+  const tokenRole = decoded.role;
+
+  // Require the expiration claim.
+  if (
+    typeof decoded.exp !== "number" ||
+    !Number.isFinite(decoded.exp)
+  ) {
+    return unauthorized(res);
+  }
+
+  // Require all claims issued by the updated login service.
   if (
     !Number.isSafeInteger(userId) ||
     userId <= 0 ||
@@ -61,8 +121,10 @@ const authenticate = asyncHandler(async (req, res, next) => {
     return unauthorized(res);
   }
 
-  // Read current authorization state from the database rather than trusting
-  // a potentially stale role or session version embedded in the JWT.
+  // ======================================================
+  // 5. FETCH CURRENT ACCOUNT AUTHORIZATION STATE
+  // ======================================================
+
   const [users] = await db.execute(
     `SELECT
        user_id,
@@ -80,7 +142,14 @@ const authenticate = asyncHandler(async (req, res, next) => {
   }
 
   const account = users[0];
-  const currentTokenVersion = Number(account.token_version);
+
+  const currentTokenVersion = Number(
+    account.token_version
+  );
+
+  // ======================================================
+  // 6. CHECK CURRENT ACCOUNT STATUS
+  // ======================================================
 
   if (
     Number(account.is_verified) !== 1 ||
@@ -92,8 +161,13 @@ const authenticate = asyncHandler(async (req, res, next) => {
     return unauthorized(res);
   }
 
-  // Preserve the req.user shape consumed by existing controllers,
-  // role middleware, and services.
+  // ======================================================
+  // 7. ATTACH AUTHENTICATED USER
+  // ======================================================
+
+  // Preserve the req.user structure consumed by existing
+  // controllers, role middleware, and services.
+
   req.user = {
     userId: Number(account.user_id),
     role: account.role,
